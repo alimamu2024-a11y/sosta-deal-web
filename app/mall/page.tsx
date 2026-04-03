@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
-
+import { useRouter } from "next/navigation";
 // ১. টাইটান ইঞ্জিন ডাটাবেজ (Tuni Mall Exclusive)
 const CONTENT_MAP: any = {
   "All": { topIcons: 12, flashItems: 8, bottomIcons: 8, banner: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800" },
@@ -20,7 +20,7 @@ const CONTENT_MAP: any = {
 export default function TuniMallFinal() {
   const [activeTab, setActiveTab] = useState("All");
   const [isLoading, setIsLoading] = useState(false);
-
+const router = useRouter();
   // সুপার-সোনিক জিরো ল্যাগ সুইচিং
   const handleTabChange = useCallback((tab: string) => {
     if(tab === activeTab) return;
@@ -93,7 +93,11 @@ export default function TuniMallFinal() {
           {/* ⭕ ৩. টপ ক্যাটাগরি আইকন (৩ লাইন - ১২টি গোল বাটন) */}
           <div className="bg-white py-4 grid grid-cols-4 gap-y-5 px-2">
             {[...Array(12)].map((_, i) => (
-              <div key={i} className="flex flex-col items-center gap-1 group cursor-pointer">
+              <div
+  key={i}
+  onClick={() => router.push(`/mall/product/${i + 1}`)}
+  className="flex flex-col items-center gap-1 group cursor-pointer hover:scale-105 transition"
+>
                 <div className="w-14 h-14 rounded-full bg-[#F9F9F9] border border-gray-100 overflow-hidden relative shadow-sm hover:scale-110 transition-all">
                    <Image src={`https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120`} alt="tuni" fill className="object-cover p-1.5 rounded-full" />
                 </div>
