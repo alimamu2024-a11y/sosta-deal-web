@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
-  Search, Home as HomeIcon, Gavel, Users, User, Smartphone, Monitor, 
-  Shirt, Car, Briefcase, Settings, Building2, Gift, 
-  Gem, ShoppingBag, Plus, Mic, Heart, Bell, PlusSquare 
+    Search, Home as HomeIcon, Gavel, Users, User, Smartphone, Monitor,
+    Shirt, Car, Briefcase, Settings, Building2, Gift,
+    Gem, ShoppingBag, Plus, Mic, Heart, Bell, PlusSquare, 
+    MessageCircleMore 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -128,50 +129,69 @@ const SostaDealFinalUpgrade = () => {
       </section>
     </div>
 
-      {/* 🔴 ৫. মোবাইল বটম ন্যাভ - সোশ্যাল বাটন ১০০% ফিক্সড */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around items-center py-2 z-[200] md:hidden shadow-[0_-5px_15px_rgba(0,0,0,0.03)]">
+      {/* 🟢 ৫. মোবাইল বটম ন্যাভ - সোশ্যাল বাটন সহ */}
+    <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-5px_25px_rgba(0,0,0,0.07)] px-2 py-3 z-50 rounded-t-[35px]">
+      <div className="flex items-end justify-between max-w-md mx-auto relative gap-0.5">
         
-        <Link href="/" className="flex flex-col items-center text-[#f85606]">
-          <HomeIcon size={22} />
-          <span className="text-[9px] font-bold mt-1 uppercase tracking-tighter">Home</span>
+        {/* 🏠 HOME */}
+        <Link href="/" className="flex flex-col items-center flex-1 group">
+          <HomeIcon className="text-[#f85606] group-active:scale-90 transition-transform" size={24} />
+          <span className="text-[9px] font-black mt-1 text-[#f85606] uppercase">HOME</span>
         </Link>
-        
-        <Link href="/grammer-haat">
-  <div className="flex flex-col items-center text-slate-400 cursor-pointer">
-    <Mic size={22} />
-    <span className="text-[9px] font-bold uppercase mt-1">গ্রামের হাট</span>
-  </div>
-</Link>
-        
-        {/* প্লাস বাটন দিয়ে এখন সরাসরি অ্যাড ফর্ম ওপেন হবে */}
-        <div className="relative">
+
+        {/* 🎤 গ্ৰামের হাট */}
+        <Link href="/grammer-haat" className="flex flex-col items-center flex-1 group">
+          <Mic className="text-green-600 group-active:scale-90 transition-transform" size={22} />
+          <span className="text-[9px] font-black mt-1 text-green-700 uppercase">গ্ৰামের হাট</span>
+        </Link>
+
+        {/* 🎀 টুনি MALL */}
+        <Link href="/mall" className="flex flex-col items-center flex-1 group">
+          <div className="relative">
+            <ShoppingBag className="text-[#FF1493] group-active:scale-90 transition-transform" size={22} />
+            <span className="absolute -top-1 -right-1 text-[8px]">✨</span>
+          </div>
+          <span className="text-[9px] font-black mt-1 text-[#FF1493] italic uppercase">টুনি MALL</span>
+        </Link>
+
+        {/* ➕ প্লাস বাটন (Post Add) */}
+        <div className="relative flex-1 flex justify-center -mt-8">
           <button 
-            onClick={() => setIsSellFormOpen(true)}
-            className="bg-[#f85606] p-3.5 rounded-2xl shadow-lg border-4 border-white text-white active:scale-90 transition-transform"
+            onClick={() => setIsSellFormOpen(true)} 
+            className="bg-[#f85606] p-3.5 rounded-[22px] shadow-lg shadow-orange-200 flex items-center justify-center border-[3px] border-white active:scale-95 transition-all outline-none"
           >
-            <PlusSquare size={24} />
+            <Plus className="text-white" size={28} strokeWidth={4} />
           </button>
         </div>
-        
-        <Link href="/social" className="flex flex-col items-center text-gray-400">
-          <Users size={22} />
-          <span className="text-[9px] font-bold mt-1 uppercase tracking-tighter">Social</span>
-        </Link>
-        
-       {/* ১৬১ নম্বর লাইন থেকে ১৭৬ নম্বর লাইন পর্যন্ত এটি রিপ্লেস করুন */}
-          <Link href="/me" className="flex flex-col items-center group">
-            <User size={22} className="text-gray-400 group-hover:text-[#00BFA5] transition-colors" />
-            <span className="text-[9px] font-bold mt-1 uppercase tracking-tighter text-gray-400 group-hover:text-[#00BFA5]">Me</span>
-          </Link>
-        </footer>
 
-        {/* ৬. পোস্ট অ্যাড ফর্ম কম্পোনেন্ট */}
-        <PostAdForm 
-          isOpen={isSellFormOpen} 
-          onClose={() => setIsSellFormOpen(false)} 
-        />
+        {/* 💬 CHAT */}
+        <Link href="/chat" className="flex flex-col items-center flex-1 group relative">
+          <MessageCircleMore className="text-red-600 group-active:scale-90 transition-transform" size={22} />
+          <span className="absolute top-0 right-2 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+          <span className="text-[9px] font-black mt-1 text-red-700 uppercase">CHAT</span>
+        </Link>
+
+        {/* 👥 SOCIAL */}
+        <Link href="/social" className="flex flex-col items-center flex-1 group">
+          <Users className="text-sky-600 group-active:scale-90 transition-transform" size={22} />
+          <span className="text-[9px] font-black mt-1 text-sky-700 uppercase">SOCIAL</span>
+        </Link>
+
+        {/* 👤 ME - এখন লগইন পেজে নিয়ে যাবে */}
+        <Link href="/login" className="flex flex-col items-center flex-1 group">
+          <User className="text-gray-400 group-active:scale-90 transition-transform" size={22} />
+          <span className="text-[9px] font-black mt-1 text-gray-500 uppercase tracking-tighter">ME</span>
+        </Link>
       </div>
-    );
-}
+    </footer>
+
+    {/* 🕕 ৬. পোস্ট অ্যাড ফর্ম কম্পোনেন্ট */}
+    <PostAdForm 
+      isOpen={isSellFormOpen} 
+      onClose={() => setIsSellFormOpen(false)} 
+    />
+  </div>
+);
+};
 
 export default SostaDealFinalUpgrade;
