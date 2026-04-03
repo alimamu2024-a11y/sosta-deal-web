@@ -12,6 +12,10 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      // 🚀 এখানে আমরা নতুন এনিমেশনটি যোগ করলাম
+      animation: {
+        'bounce-slow': 'bounce 3s infinite',
+      },
     },
   },
   plugins: [],

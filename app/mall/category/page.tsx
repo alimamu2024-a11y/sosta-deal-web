@@ -57,39 +57,42 @@ export default function TuniMallCategory() {
   return (
     <div className="flex flex-col h-screen bg-white overflow-hidden max-w-[1440px] mx-auto border-x border-gray-100 font-sans selection:bg-orange-200">
       
-      {/* 🟠 TOP HEADER: VIBRANT & INTERACTIVE */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white/90 backdrop-blur-lg sticky top-0 z-[100] shadow-sm">
-        <ChevronLeft size={26} className="text-gray-900 cursor-pointer active:scale-90 transition-transform" />
+      {/* 🔝 TOP HEADER: Heart & Shopping Cart Fixed */}
+      <div className="flex items-center gap-2 px-3 py-3 border-b border-gray-50 bg-white sticky top-0 z-50">
+        <ChevronLeft size={24} className="text-gray-900 cursor-pointer shrink-0" />
         
-        <div className="flex-1 bg-[#F3F4F6] rounded-xl flex items-center px-4 py-2.5 border border-transparent focus-within:border-orange-400 focus-within:bg-white focus-within:shadow-[0_0_15px_rgba(251,146,60,0.1)] transition-all">
-          <input 
-            placeholder="Search on Tuni Mall..." 
-            className="flex-1 bg-transparent outline-none text-[14px] text-gray-800 placeholder:text-gray-500 font-medium" 
-          />
-          <div className="flex items-center gap-3 ml-2 border-l border-gray-300 pl-3">
-             {/* 📷 AI VISUAL CAMERA */}
-             <button 
-                className="group relative"
-                onClick={() => alert("AI Visual Search Initializing...")}
-             >
-                <Camera size={22} className="text-orange-600 group-hover:scale-110 group-active:rotate-12 transition-all" />
-                <span className="absolute -top-6 -left-4 bg-black text-white text-[8px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">AI Visual Search</span>
+        {/* 🔍 SEARCH BAR AREA */}
+        <div className="flex-1 flex items-center bg-[#F3F4F6] rounded-2xl px-3 border border-transparent focus-within:border-pink-400 focus-within:bg-white transition-all h-[40px] relative min-w-0">
+          <div className="flex-1 relative flex items-center h-full overflow-hidden text-ellipsis">
+            <input 
+              id="tuni-search"
+              type="text"
+              placeholder="Search on Tuni Mall..."
+              className="peer w-full bg-transparent outline-none text-[13px] text-gray-800 font-bold z-10" 
+            />
+          </div>
+
+          <div className="flex items-center gap-2.5 ml-1 border-l border-gray-300 pl-2 shrink-0">
+             <button onClick={() => alert("AI Visual Search Initializing...")}>
+                <Camera size={19} className="text-orange-500" />
              </button>
-             <Search size={22} className="text-gray-700 hover:text-orange-600 cursor-pointer transition-colors" />
+             <Search size={18} className="text-gray-400" />
           </div>
         </div>
 
-        <div className="flex gap-4 ml-2">
-          <Heart size={26} className="text-gray-700 hover:text-red-500 transition-colors cursor-pointer" />
-          <div className="relative cursor-pointer group">
-            <ShoppingCart size={26} className="text-gray-700 group-active:scale-110 transition-transform" />
-            <span className="absolute -top-1 -right-2 bg-gradient-to-tr from-orange-600 to-orange-400 text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center ring-2 ring-white animate-pulse shadow-lg">
+        {/* ❤️ RIGHT SIDE ICONS (HEART & CART) */}
+        <div className="flex items-center gap-3 shrink-0 ml-1">
+          <Heart size={22} className="text-gray-800 hover:text-pink-600 transition-colors cursor-pointer" />
+          
+          <div className="relative cursor-pointer active:scale-90 transition-transform">
+            <ShoppingCart size={22} className="text-gray-800" />
+            {/* 🛒 Cart Count Badge */}
+            <span className="absolute -top-1.5 -right-1.5 bg-pink-600 text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center ring-2 ring-white">
               {cartCount}
             </span>
           </div>
         </div>
       </div>
-
       {/* 🟢 DYNAMIC MAIN BODY */}
       <div className="flex flex-1 overflow-hidden bg-[#FBFBFB]">
         
