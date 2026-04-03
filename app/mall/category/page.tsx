@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { 
   Search, ShoppingCart, Heart, Camera, ChevronLeft, Loader2, Sparkles, Zap, ShieldCheck
 } from 'lucide-react';
-
+import { useRouter } from "next/navigation";
 // 🔥 TITAN ENGINE DATA SET (সুপার-সনিক লোডিংয়ের জন্য ডাটা স্ট্রাকচার)
 const CATEGORY_DATA: any = {
   "Just for You": [
@@ -38,7 +38,7 @@ export default function TuniMallCategory() {
   const [isPending, startTransition] = useTransition();
   const [cartCount, setCartCount] = useState(3);
   const [viewMode, setViewMode] = useState('grid'); // Edge Case: Toggle view
-
+const router = useRouter();
   // 🧠 AI USER BEHAVIOR: Track the user's category preference
   const trackBehavior = useCallback((category: string) => {
     console.log(`[AI-PRO] User interested in: ${category}`);
@@ -134,7 +134,11 @@ export default function TuniMallCategory() {
           {/* 🔥 MAIN GRID: Optimized for Speed & Clarity */}
           <div className={`grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-x-8 gap-y-12 transition-all duration-500 ${isPending ? 'opacity-20 blur-sm scale-95' : 'opacity-100 scale-100'}`}>
             {currentItems.map((item: any) => (
-              <div key={item.id} className="flex flex-col items-center group cursor-pointer">
+              <div
+  key={item.id}
+  onClick={() => router.push(`/mall/product/${item.id}`)}
+  className="flex flex-col items-center group cursor-pointer"
+>
                 {/* গোল আইকন ডিজাইন */}
                 <div className={`w-full aspect-square rounded-full p-1.5 border-2 border-transparent group-hover:border-orange-200 group-hover:rotate-6 transition-all duration-500 ${item.color} shadow-sm group-hover:shadow-orange-100`}>
                   <div className="w-full h-full rounded-full overflow-hidden relative bg-white border border-gray-100 ring-2 ring-white ring-offset-2">
