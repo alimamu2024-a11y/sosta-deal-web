@@ -14,11 +14,22 @@ export default function ProductPage() {
 
   return (
     <div className="bg-gray-100 min-h-screen pb-20">
+
+      {/* 🖼 Product Images */}
       <ImageGallery />
+
+      {/* 📦 Product Info */}
       <ProductInfo id={id} />
+
+      {/* ⭐ Review Section (IMPORTANT) */}
       <ReviewSection />
+
+      {/* 🔥 Related Products */}
       <RelatedProducts />
+
+      {/* 🛒 Bottom Bar */}
       <BottomBar />
+      
     </div>
   );
 }
