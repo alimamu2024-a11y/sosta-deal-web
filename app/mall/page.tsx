@@ -1,198 +1,444 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from 'react';
-import Image from 'next/image';
-import { 
-  Search, ShoppingCart, Heart, Clock, Home, User, 
-  Zap, Flame, Award, Camera, Loader2
-} from 'lucide-react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-// ১. টাইটান ইঞ্জিন ডাটাবেজ (Tuni Mall Exclusive)
-const CONTENT_MAP: any = {
-  "All": { topIcons: 12, flashItems: 8, bottomIcons: 8, banner: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800" },
-  "Women": { topIcons: 12, flashItems: 8, bottomIcons: 8, banner: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800" },
-  "Men": { topIcons: 12, flashItems: 8, bottomIcons: 8, banner: "https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?w=800" },
-  "Kids": { topIcons: 12, flashItems: 8, bottomIcons: 8, banner: "https://images.unsplash.com/photo-1514096702362-21e2810e975b?w=800" },
+import { useCart } from "@/context/CartContext";
+import { motion, AnimatePresence } from "framer-motion";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, Pagination, EffectFade } from "swiper/modules";
+import { useInfiniteQuery, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { 
+  ShoppingBag, Search, Heart, Loader2, 
+  Zap, Flame, Camera, Menu, Mail, X, Sparkles, Star, Gift
+} from "lucide-react";
+
+import "swiper/css";
+import "swiper/css/pagination";
+import "swiper/css/effect-fade";
+
+const queryClient = new QueryClient();
+
+// ============ ডাটা ============
+const BANNER_SLIDES = [
+  { id: 1, title: "মেগা সেল", discount: "৭০% ছাড়", color: "from-purple-600 to-pink-600" },
+  { id: 2, title: "ফ্ল্যাশ ডিল", discount: "৬০% ছাড়", color: "from-orange-600 to-red-600" },
+  { id: 3, title: "নতুন সংগ্রহ", discount: "৫০% ছাড়", color: "from-blue-600 to-cyan-600" },
+  { id: 4, title: "ইলেকট্রনিক্স", discount: "৪০% ছাড়", color: "from-green-600 to-teal-600" },
+  { id: 5, title: "ফ্যাশন উইক", discount: "৬০% ছাড়", color: "from-pink-600 to-rose-600" },
+  { id: 6, title: "হোম ডেকোর", discount: "৫০% ছাড়", color: "from-amber-600 to-yellow-600" },
+  { id: 7, title: "বিউটি সেল", discount: "৪০% ছাড়", color: "from-purple-500 to-pink-500" },
+  { id: 8, title: "স্পোর্টস", discount: "৫০% ছাড়", color: "from-red-600 to-orange-600" },
+  { id: 9, title: "কিডস জোন", discount: "৭০% ছাড়", color: "from-green-500 to-emerald-500" },
+  { id: 10, title: "প্রিমিয়াম", discount: "৩০% ছাড়", color: "from-indigo-600 to-purple-600" },
+];
+
+const CATEGORIES = [
+  { id: 1, name: "ফ্যাশন", icon: "👕", color: "from-pink-400 to-rose-400" },
+  { id: 2, name: "ইলেকট্রনিক্স", icon: "📱", color: "from-blue-400 to-cyan-400" },
+  { id: 3, name: "হোম", icon: "🏠", color: "from-green-400 to-emerald-400" },
+  { id: 4, name: "বিউটি", icon: "💄", color: "from-purple-400 to-pink-400" },
+  { id: 5, name: "স্পোর্টস", icon: "⚽", color: "from-orange-400 to-red-400" },
+  { id: 6, name: "মোবাইল", icon: "📱", color: "from-indigo-400 to-purple-400" },
+  { id: 7, name: "কম্পিউটার", icon: "💻", color: "from-gray-500 to-gray-700" },
+  { id: 8, name: "ঘড়ি", icon: "⌚", color: "from-slate-400 to-gray-500" },
+  { id: 9, name: "ব্যাগ", icon: "👜", color: "from-amber-400 to-orange-400" },
+  { id: 10, name: "জুতা", icon: "👟", color: "from-red-400 to-orange-400" },
+  { id: 11, name: "গহনা", icon: "💍", color: "from-yellow-400 to-amber-400" },
+  { id: 12, name: "বই", icon: "📚", color: "from-emerald-500 to-green-500" },
+  { id: 13, name: "খেলনা", icon: "🧸", color: "from-yellow-400 to-orange-400" },
+  { id: 14, name: "স্বাস্থ্য", icon: "💪", color: "from-teal-400 to-green-400" },
+  { id: 15, name: "পোষ্য", icon: "🐕", color: "from-amber-300 to-yellow-400" },
+  { id: 16, name: "ফার্নিচার", icon: "🛋️", color: "from-stone-400 to-stone-600" },
+  { id: 17, name: "গেমিং", icon: "🎮", color: "from-purple-500 to-indigo-500" },
+  { id: 18, name: "মিউজিক", icon: "🎵", color: "from-red-500 to-pink-500" },
+  { id: 19, name: "ক্যামেরা", icon: "📷", color: "from-gray-400 to-gray-600" },
+  { id: 20, name: "বেবি", icon: "👶", color: "from-sky-400 to-blue-400" },
+  { id: 21, name: "স্টেশনারি", icon: "✏️", color: "from-lime-400 to-green-400" },
+  { id: 22, name: "টুলস", icon: "🔧", color: "from-gray-500 to-gray-700" },
+  { id: 23, name: "ফুল", icon: "🌸", color: "from-pink-300 to-rose-300" },
+  { id: 24, name: "গিফট", icon: "🎁", color: "from-red-400 to-orange-400" },
+];
+
+const TABS = ["সব", "মহিলা", "পুরুষ", "কিডস", "ইলেকট্রনিক্স", "ফ্যাশন"];
+
+// ✅ ফ্ল্যাশ সেল ডাটা (এখানে ভ্যালিড ডাটা দিন)
+const FLASH_SALE = [
+  { id: 1, price: 674, original: 1348, discount: 50 },
+  { id: 2, price: 378, original: 756, discount: 50 },
+  { id: 3, price: 841, original: 1682, discount: 50 },
+  { id: 4, price: 674, original: 1348, discount: 50 },
+  { id: 5, price: 378, original: 756, discount: 50 },
+  { id: 6, price: 841, original: 1682, discount: 50 },
+  { id: 7, price: 499, original: 998, discount: 50 },
+  { id: 8, price: 299, original: 598, discount: 50 },
+  { id: 9, price: 999, original: 1998, discount: 50 },
+  { id: 10, price: 549, original: 1098, discount: 50 },
+  { id: 11, price: 199, original: 398, discount: 50 },
+  { id: 12, price: 799, original: 1598, discount: 50 },
+];
+
+// ✅ অফার ডাটা (এখানে ভ্যালিড ডাটা দিন)
+const OFFERS = [
+  { id: 1, title: "ফ্যাশন সেল", discount: "৫০%", color: "from-pink-500 to-rose-500" },
+  { id: 2, title: "ইলেকট্রনিক্স", discount: "৪০%", color: "from-blue-500 to-cyan-500" },
+  { id: 3, title: "হোম ডেকোর", discount: "৬০%", color: "from-green-500 to-emerald-500" },
+  { id: 4, title: "বিউটি প্রো", discount: "৩০%", color: "from-purple-500 to-pink-500" },
+  { id: 5, title: "স্পোর্টস", discount: "৫০%", color: "from-orange-500 to-red-500" },
+  { id: 6, title: "কিডস জোন", discount: "৭০%", color: "from-yellow-500 to-orange-500" },
+  { id: 7, title: "মেগা ডিল", discount: "৮০%", color: "from-red-500 to-orange-500" },
+  { id: 8, title: "লিমিটেড", discount: "৬০%", color: "from-indigo-500 to-purple-500" },
+  { id: 9, title: "প্রিমিয়াম", discount: "৫০%", color: "from-amber-500 to-yellow-500" },
+  { id: 10, title: "এক্সক্লুসিভ", discount: "৪০%", color: "from-teal-500 to-green-500" },
+  { id: 11, title: "ট্রেন্ডি", discount: "৫০%", color: "from-rose-500 to-pink-500" },
+  { id: 12, title: "হট ডিল", discount: "৭০%", color: "from-orange-600 to-red-600" },
+];
+
+const categoryToTab: Record<string, string> = {
+  "ফ্যাশন": "Fashion", "ইলেকট্রনিক্স": "Electronics", "হোম": "Home",
+  "বিউটি": "Beauty", "স্পোর্টস": "Sports", "মোবাইল": "Electronics",
+  "কম্পিউটার": "Electronics", "ঘড়ি": "Fashion", "ব্যাগ": "Fashion",
+  "জুতা": "Fashion", "গহনা": "Fashion", "বই": "All",
+  "খেলনা": "Kids", "স্বাস্থ্য": "Health", "পোষ্য": "All",
+  "ফার্নিচার": "Home", "গেমিং": "Electronics", "মিউজিক": "Electronics",
+  "ক্যামেরা": "Electronics", "বেবি": "Kids", "স্টেশনারি": "All",
+  "টুলস": "Home", "ফুল": "Gifts", "গিফট": "Gifts"
 };
 
-export default function TuniMallFinal() {
-  const [activeTab, setActiveTab] = useState("All");
-  const [isLoading, setIsLoading] = useState(false);
-const router = useRouter();
-  // সুপার-সোনিক জিরো ল্যাগ সুইচিং
-  const handleTabChange = useCallback((tab: string) => {
-    if(tab === activeTab) return;
-    setIsLoading(true);
-    setActiveTab(tab);
-    setTimeout(() => setIsLoading(false), 200); // ২ মিলি-সেকেন্ড ডিলে
-  }, [activeTab]);
+const productData: Record<string, string[]> = {
+  "সব": ["iPhone 15 Pro", "Nike Air Max", "Samsung TV", "Leather Bag", "Watch", "Headphones", "Laptop", "Camera"],
+  "মহিলা": ["Designer Saree", "Women's Watch", "Handbag", "Heels", "Lipstick", "Perfume", "Bracelet", "Sunglasses"],
+  "পুরুষ": ["Men's Shirt", "Sneakers", "Men's Watch", "Backpack", "Perfume", "Sunglasses", "Belt", "Wallet"],
+  "কিডস": ["Kids Toy", "Baby Dress", "Kids Shoes", "Learning Tablet", "Stroller", "Kids Watch", "Color Pen", "School Bag"],
+  "ইলেকট্রনিক্স": ["iPhone 15", "Samsung S24", "MacBook Pro", "iPad Air", "AirPods Pro", "Smart Watch", "Power Bank", "Headphones"],
+  "ফ্যাশন": ["Premium T-Shirt", "Denim Jeans", "Leather Jacket", "Hoodie", "Sports Shoes", "Cap", "Scarf", "Belt"],
+  "হোম": ["Sofa", "Bed", "Table", "Lamp", "Curtain", "Pillow", "Carpet", "Mirror"],
+  "বিউটি": ["Lipstick", "Foundation", "Perfume", "Face Cream", "Shampoo", "Hair Oil", "Nail Polish", "Face Wash"],
+  "স্পোর্টস": ["Football", "Cricket Bat", "Gym Gloves", "Protein", "Sports Shoes", "T-shirt", "Short", "Water Bottle"],
+};
 
-  const data = useMemo(() => CONTENT_MAP[activeTab] || CONTENT_MAP["All"], [activeTab]);
+const fetchProductsAPI = async ({ pageParam = 1, category = "সব", search = "" }) => {
+  await new Promise(r => setTimeout(r, 400));
+  let items = productData[category] || productData["সব"];
+  if (search) items = items.filter(i => i.toLowerCase().includes(search.toLowerCase()));
+  const products = Array(20).fill(0).map((_, i) => ({
+    id: `${category}-${pageParam}-${i}-${Date.now()}`,
+    title: `${items[i % items.length]} ${(pageParam-1)*20 + i + 1}`,
+    price: Math.floor(Math.random() * 5000 + 299),
+    image: `https://picsum.photos/seed/${category}${pageParam}${i}/300/400`,
+    category: category,
+    rating: Number((Math.random() * 2 + 3).toFixed(1)),
+    sold: Math.floor(Math.random() * 1000),
+  }));
+  return { products, nextPage: pageParam + 1, hasNextPage: pageParam < 100 };
+};
+
+const ProductCard = React.memo(({ product, onAddToCart, onWishlist }: any) => {
+  const router = useRouter();
+  return (
+    <div onClick={() => router.push(`/mall/product/${product.id}`)} className="bg-white rounded-xl overflow-hidden shadow-sm active:scale-95 transition-all duration-150 cursor-pointer">
+      <div className="relative aspect-[3/4] bg-gray-200 overflow-hidden">
+        <img 
+          src={product.image} 
+          alt={product.title} 
+          className="w-full h-full object-cover transition-opacity duration-500" 
+          loading="lazy"
+          onLoad={(e) => { e.currentTarget.style.opacity = "1"; }}
+          style={{ opacity: 0 }} 
+        />
+        <button onClick={(e) => { e.stopPropagation(); onWishlist(product); }} className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm p-1.5 rounded-full">
+          <Heart size={14} className="text-gray-600" />
+        </button>
+        <div className="absolute bottom-2 left-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">-{Math.floor(Math.random() * 40 + 20)}%</div>
+      </div>
+      <div className="p-2">
+        <p className="text-[11px] text-gray-500 line-clamp-1">{product.title}</p>
+        <p className="font-bold text-black text-sm">৳{product.price.toLocaleString()}</p>
+        <button onClick={(e) => { e.stopPropagation(); onAddToCart(product); }} className="mt-1.5 w-full bg-black text-white text-[10px] py-1.5 rounded-lg font-semibold active:scale-95 transition-all">কার্টে যোগ করুন</button>
+      </div>
+    </div>
+  );
+});
+ProductCard.displayName = "ProductCard";
+
+function TuniMallContent() {
+  const router = useRouter();
+  const { addToCart, getCartCount } = useCart();
+  const [activeTab, setActiveTab] = useState("সব");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [wishlistMsg, setWishlistMsg] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: ["products", activeTab, searchQuery],
+    queryFn: ({ pageParam = 1 }) => fetchProductsAPI({ pageParam, category: activeTab, search: searchQuery }),
+    getNextPageParam: (lastPage) => lastPage.hasNextPage ? lastPage.nextPage : undefined,
+    initialPageParam: 1,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  const allProducts = data?.pages.flatMap(page => page.products) || [];
+  const columnCount = 2;
+  
+  const rowVirtualizer = useVirtualizer({
+    count: Math.ceil(allProducts.length / columnCount),
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: () => 320,
+    overscan: 5,
+  });
+
+  useEffect(() => {
+    const lastRowIndex = rowVirtualizer.getVirtualItems().at(-1)?.index;
+    if (lastRowIndex !== undefined && lastRowIndex >= Math.ceil(allProducts.length / columnCount) - 2 && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [rowVirtualizer.getVirtualItems(), hasNextPage, isFetchingNextPage, fetchNextPage, allProducts.length, columnCount]);
+
+  useEffect(() => {
+    refetch();
+  }, [activeTab, searchQuery]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setSearchQuery("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleCategoryClick = (category: string) => {
+    const mappedTab = categoryToTab[category] || "সব";
+    setActiveTab(mappedTab);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleWishlist = (product: any) => {
+    setWishlistMsg(`❤️ ${product.title} উইশলিস্টে যোগ হয়েছে`);
+    setTimeout(() => setWishlistMsg(""), 1500);
+  };
+
+  const handleAddToCartLocal = (product: any) => {
+    addToCart(product);
+    setWishlistMsg(`🛒 ${product.title} কার্টে যোগ হয়েছে`);
+    setTimeout(() => setWishlistMsg(""), 1500);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      if (value.trim()) {
+        setIsSearching(true);
+        refetch();
+        setTimeout(() => setIsSearching(false), 800);
+      }
+    }, 500);
+  };
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      setIsSearching(true);
+      refetch();
+      setTimeout(() => setIsSearching(false), 800);
+    }
+  };
+
+  const [timeLeft, setTimeLeft] = useState({ hours: 2, minutes: 15, seconds: 45 });
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
+        if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
+        if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
+        return prev;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-[#F4F4F4] pb-24 font-sans selection:bg-orange-100">
+    <div className="bg-gray-100 min-h-screen pb-16 overflow-x-hidden selection:bg-orange-100">
+      <AnimatePresence>
+        {wishlistMsg && (
+          <motion.div initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -50 }}
+            className="fixed top-14 left-1/2 -translate-x-1/2 bg-black/80 text-white px-3 py-1.5 rounded-full text-[11px] z-50 whitespace-nowrap">
+            {wishlistMsg}
+          </motion.div>
+        )}
+      </AnimatePresence>
       
-      {/* 🚀 ১. স্লিম ও পাওয়ারফুল হেডার (Tuni Mall Branding) */}
-      <div className="sticky top-0 z-[110] bg-white/95 backdrop-blur-sm px-4 pt-3 pb-1 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex-1 bg-[#F5F5F5] rounded-full flex items-center px-4 py-1.5 border border-gray-100">
-            <Search size={14} className="text-gray-400" />
-            <input 
-              type="text" 
-              placeholder={`Search Tuni Mall: ${activeTab}`} 
-              className="flex-1 bg-transparent outline-none px-2 text-[11px] font-bold text-gray-800" 
-            />
-            <Camera size={16} className="text-gray-400 cursor-pointer" />
+      <AnimatePresence>
+        {isSearching && (
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-full text-xs z-[100] flex items-center gap-2 shadow-lg">
+            <Sparkles size={14} className="animate-spin" /><span>🤖 AI সার্চ করছে...</span><Loader2 size={12} className="animate-spin" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <header className="sticky top-0 z-40 bg-white shadow-sm">
+        <div className="px-3 py-2 flex items-center gap-2">
+          <button className="p-1"><Menu size={20} /></button>
+          <button className="p-1"><Mail size={20} /></button>
+          <div className="flex-1 flex items-center bg-gray-100 rounded-full px-2 py-1">
+            <input placeholder="১০ কোটি+ পণ্য সার্চ করুন..." value={searchQuery} onChange={handleSearchChange} onKeyDown={(e) => e.key === "Enter" && handleSearch()} className="flex-1 bg-transparent text-xs outline-none text-black" />
+            <button onClick={handleSearch} className="bg-black text-white p-0.5 rounded-full ml-1"><Search size={12} /></button>
           </div>
-          <div className="flex gap-3 text-gray-700">
-            <Heart size={20} />
-            <div className="relative">
-              <ShoppingCart size={20} />
-              <span className="absolute -top-1.5 -right-1.5 bg-orange-600 text-white text-[8px] px-1 rounded-full">৩</span>
-            </div>
-          </div>
+          <button className="p-1"><Heart size={20} className="text-gray-600" /></button>
+          <button onClick={() => router.push("/mall/cart")} className="relative p-1">
+            <ShoppingBag size={20} className="text-gray-600" />
+            {getCartCount() > 0 && <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center">{getCartCount()}</span>}
+          </button>
         </div>
-        
-        {/* ক্যাটাগরি ট্যাব */}
-        <div className="flex gap-5 overflow-x-auto py-2 scrollbar-hide">
-          {["All", "Women", "Men", "Kids", "Home", "1 to 99"].map((cat) => (
-            <button 
-              key={cat} 
-              onClick={() => handleTabChange(cat)} 
-              className={`text-[12px] font-black uppercase whitespace-nowrap transition-all ${activeTab === cat ? "text-orange-600 border-b-2 border-orange-600 scale-105" : "text-gray-400 hover:text-gray-600"}`}
-            >
-              {cat}
+        <div className="flex gap-1 overflow-x-auto px-3 py-1.5 border-t no-scrollbar bg-white">
+          {TABS.map(tab => (
+            <button key={tab} onClick={() => handleTabChange(tab)} className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-all ${activeTab === tab ? "bg-black text-white font-semibold" : "text-gray-500 bg-gray-100"}`}>
+              {tab}
             </button>
+          ))}
+        </div>
+      </header>
+
+      <div className="h-44 mx-2 mt-2 rounded-xl overflow-hidden bg-gray-200">
+        <Swiper modules={[Autoplay, Pagination, EffectFade]} autoplay={{ delay: 3000, disableOnInteraction: false }} pagination={{ clickable: true, bulletClass: "swiper-pagination-bullet !bg-white" }} effect="fade" loop className="h-full">
+          {BANNER_SLIDES.map((slide) => (
+            <SwiperSlide key={slide.id}>
+              <div className={`relative h-full bg-gradient-to-r ${slide.color}`}>
+                <div className="absolute inset-0 flex flex-col justify-center px-5">
+                  <h2 className="text-white text-xl font-black">{slide.title}</h2>
+                  <p className="text-yellow-300 text-sm font-bold">{slide.discount}</p>
+                  <button onClick={() => router.push(`/mall/product/banner-${slide.id}`)} className="mt-1.5 bg-white text-black px-4 py-0.5 text-[10px] font-bold rounded-full w-fit">এখনই কিনুন →</button>
+                </div>
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      </div>
+
+      <div className="bg-white mt-2 py-4 px-2 rounded-t-2xl">
+        <div className="flex justify-between items-center mb-3 px-1"><span className="font-bold text-gray-700 text-sm">ক্যাটাগরি</span><button className="text-[10px] text-orange-500">সব দেখুন →</button></div>
+        <div className="grid grid-cols-5 gap-y-4 gap-x-2">
+          {CATEGORIES.map((cat, i) => (
+            <div key={i} onClick={() => handleCategoryClick(cat.name)} className="flex flex-col items-center cursor-pointer active:scale-95 transition-all">
+              <div className="w-14 h-14 min-w-[56px] min-h-[56px] rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-2xl shadow-sm">
+                {cat.icon}
+              </div>
+              <span className="text-[10px] mt-1.5 font-medium text-gray-700 text-center">{cat.name}</span>
+            </div>
           ))}
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="h-96 flex items-center justify-center"><Loader2 className="animate-spin text-orange-600" size={32} /></div>
-      ) : (
-        <>
-          {/* 🖼️ ২. টাইটান স্লাইডার (সাইলেন্ট ভিডিও স্লট সহ) */}
-          <div className="w-full h-44 relative bg-gray-100 shadow-inner">
-            <Swiper className="h-full" loop={true}>
-              <SwiperSlide>
-                <Image src={data.banner} alt="Tuni Mall Banner" fill priority className="object-cover" sizes="100vw" />
-              </SwiperSlide>
-              <SwiperSlide>
-                <div className="w-full h-full bg-black flex items-center justify-center">
-                  <div className="text-center">
-                    <p className="text-orange-500 font-black italic text-sm tracking-widest uppercase underline decoration-white">TUNI MALL AD</p>
-                    <p className="text-white text-[10px] font-bold uppercase mt-1">Titan Engine Powered</p>
-                  </div>
-                </div>
-              </SwiperSlide>
-            </Swiper>
-          </div>
-
-          {/* ⭕ ৩. টপ ক্যাটাগরি আইকন (৩ লাইন - ১২টি গোল বাটন) */}
-          <div className="bg-white py-4 grid grid-cols-4 gap-y-5 px-2">
-            {[...Array(12)].map((_, i) => (
-              <div
-  key={i}
-  onClick={() => router.push(`/mall/product/${i + 1}`)}
-  className="flex flex-col items-center gap-1 group cursor-pointer hover:scale-105 transition"
->
-                <div className="w-14 h-14 rounded-full bg-[#F9F9F9] border border-gray-100 overflow-hidden relative shadow-sm hover:scale-110 transition-all">
-                   <Image src={`https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120`} alt="tuni" fill className="object-cover p-1.5 rounded-full" />
-                </div>
-                <span className="text-[9px] font-black text-gray-700 uppercase tracking-tighter">Tuni {i+1}</span>
+      {/* ✅ ফ্ল্যাশ সেল সেকশন (লাল দাগ থাকবে না) */}
+      <div className="mt-2 bg-gradient-to-r from-red-50 to-orange-50 px-3 py-3 mx-2 rounded-xl">
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-1.5"><Zap size={18} className="text-red-500 animate-pulse" fill="currentColor" /><span className="font-bold text-red-600 text-sm">ফ্ল্যাশ সেল</span></div>
+          <div className="text-[10px] font-bold bg-black text-white px-2.5 py-1 rounded-full">{String(timeLeft.hours).padStart(2,'0')}:{String(timeLeft.minutes).padStart(2,'0')}:{String(timeLeft.seconds).padStart(2,'0')}</div>
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          {FLASH_SALE.map((item) => (
+            <div key={item.id} onClick={() => router.push(`/mall/product/flash-${item.id}`)} className="bg-white rounded-xl p-1 shadow-sm cursor-pointer active:scale-95 transition">
+              <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center text-3xl">
+                <span className="shrink-0">⚡</span>
+                <div className="absolute top-0 left-0 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-br">-{item.discount}%</div>
               </div>
-            ))}
-          </div>
-
-          {/* ⚡ ৪. ফ্ল্যাশ সেল (২ লাইন - ৮টি প্রোডাক্ট) */}
-          <div className="mt-2 bg-white p-3">
-            <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-1 text-orange-600 font-black italic text-base tracking-tighter uppercase">
-                <Zap size={18} fill="currentColor" /> Flash Sale
-              </div>
-              <div className="flex items-center gap-1 bg-orange-50 text-orange-600 px-2 py-0.5 rounded-md border border-orange-100">
-                <Clock size={12} />
-                <span className="text-[10px] font-black tracking-widest">02:45:10</span>
-              </div>
+              <div className="text-center mt-1"><p className="text-red-600 font-bold text-xs">৳{item.price}</p><p className="text-gray-400 text-[9px] line-through">৳{item.original}</p></div>
             </div>
-            <div className="grid grid-cols-4 gap-2">
-              {[1,2,3,4,5,6,7,8].map(i => (
-                <div key={i} className="relative group">
-                  <div className="aspect-square bg-gray-50 rounded-xl overflow-hidden border border-gray-100 relative">
-                    <Image src={`https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200`} alt="p" fill className="object-cover group-hover:scale-105 transition-transform" />
-                    <div className="absolute top-0 left-0 bg-orange-600 text-white text-[8px] font-black px-1.5 rounded-br-lg italic shadow-md">HOT</div>
+          ))}
+        </div>
+      </div>
+
+      {/* ✅ অফার গ্রিড সেকশন (লাল দাগ থাকবে না) */}
+      <div className="mt-2 px-2">
+        <div className="flex justify-between items-center mb-2 px-1"><div className="flex items-center gap-1.5"><span className="text-sm">🎁</span><span className="font-bold text-gray-700 text-sm">হট অফার</span></div><button className="text-[10px] text-orange-500">সব দেখুন →</button></div>
+        <div className="grid grid-cols-4 gap-2">
+          {OFFERS.map((offer) => (
+            <div key={offer.id} onClick={() => router.push(`/mall/product/offer-${offer.id}`)} className={`bg-gradient-to-r ${offer.color} rounded-xl p-2 shadow-lg cursor-pointer active:scale-95 transition-all`}>
+              <p className="text-white text-[8px] opacity-80">অফার</p>
+              <p className="text-white text-[10px] font-bold leading-tight">{offer.title}</p>
+              <p className="text-yellow-200 text-[12px] font-black">{offer.discount}</p>
+              <button className="mt-1 bg-white/20 text-white text-[7px] px-1.5 py-0.5 rounded-full">কিনুন →</button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="px-2 mt-2">
+        <div className="flex justify-between items-center mb-2 px-1"><h2 className="font-bold flex items-center gap-1 text-gray-800 text-sm"><Flame size={16} className="text-orange-500" />প্রস্তাবিত পণ্য</h2><button className="text-[10px] text-orange-500">সব দেখুন →</button></div>
+        
+        {isLoading && allProducts.length === 0 ? (
+          <div className="grid grid-cols-2 gap-2">{[...Array(6)].map((_, i) => <div key={i} className="bg-white rounded-xl p-2 animate-pulse h-64" />)}</div>
+        ) : allProducts.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-xl"><div className="text-5xl mb-2">🛒</div><p className="text-gray-400 text-xs">কোন পণ্য নেই</p><button onClick={() => refetch()} className="mt-3 text-orange-500 text-xs font-semibold">আবার চেষ্টা করুন →</button></div>
+        ) : (
+          <div ref={scrollContainerRef} className="h-[600px] overflow-y-auto">
+            <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const rowItems = allProducts.slice(virtualRow.index * columnCount, (virtualRow.index + 1) * columnCount);
+                return (
+                  <div
+                    key={virtualRow.key}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      transform: `translateY(${virtualRow.start}px)`,
+                      display: 'flex',
+                      gap: '8px',
+                      padding: '4px',
+                    }}
+                  >
+                    {rowItems.map((product: any) => (
+                      <div key={product.id} className="w-1/2">
+                        <ProductCard product={product} onAddToCart={handleAddToCartLocal} onWishlist={handleWishlist} />
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-[10px] font-black mt-1.5 text-gray-900 text-center">৳৮৫০</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
+        )}
+      </div>
 
-          {/* ⭕ ৫. বটম ক্যাটাগরি (২ লাইন - ৮টি আইকন) */}
-          <div className="mt-2 bg-white py-4 grid grid-cols-4 gap-y-5 px-2 border-t border-gray-50">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="flex flex-col items-center gap-1 cursor-pointer">
-                <div className="w-14 h-14 rounded-full bg-gray-50 border border-gray-200 overflow-hidden relative shadow-sm hover:rotate-6 transition-transform">
-                   <Image src={`https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=120`} alt="cat" fill className="object-cover p-2 rounded-full" />
-                </div>
-                <span className="text-[9px] font-black text-gray-500 uppercase">Mall {i+1}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* 🛍️ ৬. মেইন ইনফিনিট গ্রিড (২ কলাম প্রিমিয়াম লুক) */}
-          <div className="p-2 grid grid-cols-2 gap-2 mt-1">
-            {[1,2,3,4,5,6].map(i => (
-              <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-                <div className="relative aspect-[4/5]">
-                  <Image src={`https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400`} alt="p" fill className="object-cover" loading="lazy" />
-                  <div className="absolute top-2 right-2 p-1.5 bg-white/80 backdrop-blur-md rounded-full text-orange-600"><Heart size={14} fill="currentColor" /></div>
-                </div>
-                <div className="p-3">
-                  <h3 className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Tuni Mall Official</h3>
-                  <p className="text-[11px] font-bold text-gray-800 mt-0.5 line-clamp-1">Titan Quality Tuni Outfit</p>
-                  <div className="mt-2 flex justify-between items-end">
-                    <div>
-                      <p className="text-sm font-black text-black">৳১,২৫০</p>
-                      <p className="text-[9px] text-gray-400 line-through">৳২,০০০</p>
-                    </div>
-                    <button className="bg-orange-600 text-white p-2 rounded-xl shadow-lg shadow-orange-100 active:scale-90 transition-transform">
-                      <ShoppingCart size={14} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* 📱 ৭. আপনার দেওয়া সেই স্লিম ও বড় স্ক্রিন লুক নেভিগেশন (Tuni Mall Edition) */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-100 flex justify-around items-center z-[120] h-14 px-4 shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
-        <div className="flex flex-col items-center justify-center text-black cursor-pointer group">
-          <Home size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" />
-          <span className="text-[9px] font-black uppercase mt-0.5">Home</span>
-        </div>
-        <div className="flex flex-col items-center justify-center text-gray-400 cursor-pointer hover:text-black transition-colors">
-          <Zap size={20} />
-          <span className="text-[9px] font-bold uppercase mt-0.5">Category</span>
-        </div>
-        <div className="flex flex-col items-center justify-center text-[#f85606] cursor-pointer scale-110">
-          <Flame size={22} fill="#f85606" className="drop-shadow-sm" />
-          <span className="text-[9px] font-black uppercase mt-0.5">Trending</span>
-        </div>
-        <div className="flex flex-col items-center justify-center text-gray-400 cursor-pointer hover:text-black transition-colors">
-          <Award size={20} />
-          <span className="text-[9px] font-bold uppercase mt-0.5">New</span>
-        </div>
-        <div className="flex flex-col items-center justify-center text-gray-400 cursor-pointer hover:text-black transition-colors">
-          <User size={20} />
-          <span className="text-[9px] font-bold uppercase mt-0.5">Me</span>
-        </div>
+      <nav className="fixed bottom-0 left-0 right-0 bg-white flex justify-around items-center py-2.5 border-t shadow-lg z-50">
+        <button onClick={() => router.push("/mall")} className="flex flex-col items-center active:scale-95 transition-all"><span className="text-xl">🏠</span><span className="text-[8px] font-semibold text-gray-500">HOME</span></button>
+        <button onClick={() => router.push("/mall/category")} className="flex flex-col items-center active:scale-95 transition-all"><span className="text-xl">📂</span><span className="text-[8px] font-semibold text-gray-500">CATEGORY</span></button>
+        <button onClick={() => router.push("/mall/trending")} className="flex flex-col items-center active:scale-95 transition-all"><span className="text-xl">🔥</span><span className="text-[8px] font-semibold text-gray-500">TRENDING</span></button>
+        <button onClick={() => router.push("/mall/cart")} className="flex flex-col items-center active:scale-95 transition-all relative"><span className="text-xl">🛒</span><span className="text-[8px] font-semibold text-gray-500">CART</span>{getCartCount() > 0 && <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[7px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5">{getCartCount()}</span>}</button>
+        <button onClick={() => router.push("/me")} className="flex flex-col items-center active:scale-95 transition-all"><span className="text-xl">👤</span><span className="text-[8px] font-semibold text-gray-500">ME</span></button>
+        <button onClick={() => { if(confirm("মার্কেট প্লেসে ফিরে যাবেন?")) router.push("/"); }} className="flex flex-col items-center active:scale-95 transition-all"><span className="text-xl">🚪</span><span className="text-[8px] font-semibold text-red-500">MALL EXIT</span></button>
       </nav>
 
+      {showCamera && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center" onClick={() => setShowCamera(false)}>
+          <div className="bg-white rounded-xl p-5 m-4 max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-3"><h3 className="font-bold">📸 এআই ক্যামেরা</h3><button onClick={() => setShowCamera(false)}><X size={18} /></button></div>
+            <div className="bg-gray-100 h-36 rounded-xl flex flex-col items-center justify-center"><Camera size={36} className="text-gray-400" /><p className="text-xs text-gray-500 mt-2">ছবি তুলে সার্চ করুন</p></div>
+            <button className="mt-4 w-full bg-black text-white py-1.5 rounded-full text-xs font-semibold">ক্যামেরা খুলুন</button>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+export default function TuniMallHome() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TuniMallContent />
+    </QueryClientProvider>
   );
 }

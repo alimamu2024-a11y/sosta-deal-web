@@ -1,10 +1,11 @@
-import BottomNav from "@/components/BottomNav";
+// app/mall/layout.tsx
+import BottomNav from "@/components/BottomNav";  // ← @/components (সঠিক)
 
-export default function MallRootLayout({ children }: { children: React.ReactNode }) {
+export default function MallLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="pb-16">
+    <>
       {children}
       <BottomNav />
-    </div>
+    </>
   );
 }

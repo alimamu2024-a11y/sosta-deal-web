@@ -1,90 +1,44 @@
+// components/BottomNav.tsx
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
-import {
-  Home,
-  Zap,
-  Flame,
-  Award,
-  User,
-  ArrowLeftCircle,
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCart } from "@/context/CartContext";
 
 export default function BottomNav() {
   const router = useRouter();
-  const pathname = usePathname();
-
-  const navItems = [
-    { icon: Home, label: "Home", path: "/mall" },
-    { icon: Zap, label: "Category", path: "/mall/category" },
-    { icon: Flame, label: "Trending", path: "/mall/trending" },
-    { icon: Award, label: "New", path: "/mall/new" },
-    { icon: User, label: "Me", path: "/mall/me" },
-    { icon: ArrowLeftCircle, label: "Exit", path: "/" },
-  ];
+  const { getCartCount } = useCart();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[120] h-14 px-2 flex justify-around items-center 
-    bg-white/80 backdrop-blur-xl border-t border-gray-200 shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
-
-      {navItems.map((item) => {
-        const isActive = pathname === item.path;
-        const isExit = item.label === "Exit";
-
-        return (
-          <div
-            key={item.label}
-            onClick={() => router.push(item.path)}
-            className={`flex flex-col items-center justify-center cursor-pointer transition-all duration-300
-            ${
-              isExit
-                ? "text-orange-600"
-                : isActive
-                ? "text-black scale-105"
-                : "text-gray-400 hover:text-black"
-            }`}
-          >
-            {/* 🔥 ICON */}
-            <div
-              className={`p-1.5 rounded-xl transition-all duration-300
-              ${
-                isExit
-                  ? "bg-orange-100 shadow-md"
-                  : isActive
-                  ? "bg-gray-100"
-                  : ""
-              }`}
-            >
-              <item.icon
-                size={18}
-                strokeWidth={2.5}
-                className={`transition-all
-                ${
-                  isExit
-                    ? "fill-orange-600"
-                    : isActive
-                    ? "scale-110"
-                    : ""
-                }`}
-              />
-            </div>
-
-            {/* 🔥 LABEL */}
-            <span
-              className={`text-[8px] mt-0.5 uppercase tracking-wide
-              ${
-                isExit
-                  ? "font-black text-orange-600"
-                  : isActive
-                  ? "font-black"
-                  : "font-bold"
-              }`}
-            >
-              {isExit ? "Mall Exit" : item.label}
-            </span>
-          </div>
-        );
-      })}
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md flex justify-around items-center py-2.5 border-t shadow-lg z-50">
+      <button onClick={() => router.push("/mall")} className="flex flex-col items-center active:scale-95 transition-all">
+        <span className="text-2xl">🏠</span>
+        <span className="text-[9px] font-semibold text-gray-600">হোম</span>
+      </button>
+      <button onClick={() => router.push("/mall/category")} className="flex flex-col items-center active:scale-95 transition-all">
+        <span className="text-2xl">📂</span>
+        <span className="text-[9px] font-semibold text-gray-600">ক্যাটাগরি</span>
+      </button>
+      <button onClick={() => router.push("/mall/trending")} className="flex flex-col items-center active:scale-95 transition-all">
+        <span className="text-2xl">🔥</span>
+        <span className="text-[9px] font-semibold text-gray-600">ট্রেন্ডিং</span>
+      </button>
+      <button onClick={() => router.push("/mall/cart")} className="flex flex-col items-center active:scale-95 transition-all relative">
+        <span className="text-2xl">🛒</span>
+        <span className="text-[9px] font-semibold text-gray-600">কার্ট</span>
+        {getCartCount() > 0 && (
+          <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[8px] font-bold rounded-full min-w-4 h-4 flex items-center justify-center px-1">
+            {getCartCount() > 99 ? "99+" : getCartCount()}
+          </span>
+        )}
+      </button>
+      <button onClick={() => router.push("/me")} className="flex flex-col items-center active:scale-95 transition-all">
+        <span className="text-2xl">👤</span>
+        <span className="text-[9px] font-semibold text-gray-600">আমি</span>
+      </button>
+      <button onClick={() => { if(confirm("মার্কেট প্লেসে ফিরে যাবেন?")) router.push("/"); }} className="flex flex-col items-center active:scale-95 transition-all">
+        <span className="text-2xl">🚪</span>
+        <span className="text-[9px] font-semibold text-red-500">প্রস্থান</span>
+      </button>
     </nav>
   );
 }

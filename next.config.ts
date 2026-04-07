@@ -2,17 +2,30 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   typescript: {
-    // টাইপ এরর থাকলেও যেন প্রজেক্ট রান হয়
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: true,  // আপনার আগের সেটিং রাখলাম
   },
-  // এখানে eslint ব্লকটি আমরা সরিয়ে দিয়েছি কনফ্লিক্ট এড়াতে
+  
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: 'picsum.photos',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*',  // সব ডোমেইন এর জন্য (development এর জন্য)
       },
     ],
+    // development এ unoptimized (error কমাতে)
+    unoptimized: process.env.NODE_ENV === 'development',
   },
 };
 

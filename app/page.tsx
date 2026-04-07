@@ -10,7 +10,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 // আপনার নতুন পোস্ট অ্যাড ফর্ম কম্পোনেন্ট
-import PostAdForm from './post-ad/PostAdForm';
+import PostAdForm from '../components/PostAdForm';
 
 const SostaDealFinalUpgrade = () => {
   const [currentSlide, setCurrentSlide] = useState(0);

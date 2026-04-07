@@ -1,44 +1,55 @@
+// components/product/ImageGallery.tsx
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import ImageModal from "./ImageModal";
 
-const images = [
-  "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",
-  "https://images.unsplash.com/photo-1517336714731-489689fd1ca8",
-  "https://images.unsplash.com/photo-1585386959984-a41552231658",
-];
+type ImageGalleryProps = {
+  images: string[];
+};
 
-export default function ImageGallery() {
-  const [active, setActive] = useState(0);
+export default function ImageGallery({ images }: ImageGalleryProps) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [modalImage, setModalImage] = useState<string | null>(null);
+
+  // ✅ ভুল ফিক্স: !images চেক করতে হবে
+  if (!images || images.length === 0) return null;
 
   return (
-    <div className="bg-white p-4">
+    <>
+      <div className="space-y-3">
+        {/* বড় ছবি */}
+        <div
+          className="aspect-square rounded-2xl overflow-hidden bg-gray-100 relative group cursor-pointer"
+          onClick={() => setModalImage(images[selectedIndex])}
+        >
+          <img
+            src={images[selectedIndex]}
+            className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500"
+            alt="Product"
+          />
+          <button className="absolute bottom-4 right-4 bg-black/70 text-white p-2 rounded-full text-xs backdrop-blur-sm">
+            📸 View All
+          </button>
+        </div>
 
-      {/* 🔥 Main Image */}
-      <div className="relative w-full h-64 mb-3 rounded overflow-hidden">
-        <Image
-          src={images[active]}
-          alt="product"
-          fill
-          className="object-cover transition duration-300"
-        />
+        {/* থাম্বনেইল */}
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {images.map((img, idx) => (
+            <button
+              key={idx}
+              onClick={() => setSelectedIndex(idx)}
+              className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 ${
+                selectedIndex === idx ? "border-black shadow-md" : "border-transparent opacity-70"
+              }`}
+            >
+              <img src={img} className="w-full h-full object-cover" alt={`Thumb ${idx + 1}`} />
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* 🧠 Thumbnail */}
-      <div className="flex gap-2">
-        {images.map((img, i) => (
-          <div
-            key={i}
-            onClick={() => setActive(i)}
-            className={`w-16 h-16 rounded overflow-hidden border cursor-pointer ${
-              active === i ? "border-orange-500" : "border-gray-300"
-            }`}
-          >
-            <Image src={img} alt="thumb" width={64} height={64} />
-          </div>
-        ))}
-      </div>
-    </div>
+      <ImageModal image={modalImage} onClose={() => setModalImage(null)} />
+    </>
   );
 }
