@@ -91,7 +91,7 @@ const CONDITIONS = ["নতুন", "ব্যবহৃত (ভালো)", "ব
 // ==================== MAIN COMPONENT ====================
 export default function MallMePage() {
   const router = useRouter();
-  const { user, logout, becomeSeller } = useAuth();
+  const { user, logout, becomeSeller, isLoading } = useAuth();
   const { getCartCount } = useCart();
   const [activeTab, setActiveTab] = useState("overview");
   const [profileImage, setProfileImage] = useState(user?.avatar || "");
@@ -116,12 +116,12 @@ export default function MallMePage() {
   const [productImageFiles, setProductImageFiles] = useState<File[]>([]);
   const [isProductLoading, setIsProductLoading] = useState(false);
 
-  // Redirect if not logged in
+  // Redirect if not logged in (after loading)
   useEffect(() => {
-    if (!user) {
+    if (!isLoading && !user) {
       router.push("/login");
     }
-  }, [user, router]);
+  }, [isLoading, user, router]);
 
   // Image compression for profile
   const compressImage = async (file: File): Promise<File> => {
@@ -249,6 +249,10 @@ export default function MallMePage() {
       default: return "text-gray-600 bg-gray-50";
     }
   };
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 size={32} className="animate-spin text-orange-500" /></div>;
+  }
 
   if (!user) return null;
 

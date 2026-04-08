@@ -31,7 +31,7 @@ export default function BottomNav() {
           </span>
         )}
       </button>
-      <button onClick={() => router.push("/me")} className="flex flex-col items-center active:scale-95 transition-all">
+      <button onClick={() => router.push("/mall/me")} className="flex flex-col items-center active:scale-95 transition-all">
         <span className="text-2xl">👤</span>
         <span className="text-[9px] font-semibold text-gray-600">আমি</span>
       </button>
