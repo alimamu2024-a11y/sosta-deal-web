@@ -177,10 +177,10 @@ const SostaDealFinalUpgrade = () => {
           <span className="text-[9px] font-black mt-1 text-sky-700 uppercase">SOCIAL</span>
         </Link>
 
-        {/* 👤 ME - এখন লগইন পেজে নিয়ে যাবে */}
+        {/* 👤 DASHBOARD - এখন লগইন পেজে নিয়ে যাবে */}
         <Link href="/login" className="flex flex-col items-center flex-1 group">
           <User className="text-gray-400 group-active:scale-90 transition-transform" size={22} />
-          <span className="text-[9px] font-black mt-1 text-gray-500 uppercase tracking-tighter">ME</span>
+          <span className="text-[9px] font-black mt-1 text-gray-500 uppercase tracking-tighter">dashboard</span>
         </Link>
       </div>
     </footer>

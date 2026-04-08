@@ -1,4 +1,3 @@
-// context/AuthContext.tsx
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
@@ -9,8 +8,8 @@ type User = {
   email: string;
   avatar: string;
   isSeller: boolean;
-  phone?: string;
   joinDate?: string;
+  points?: number;
 };
 
 type AuthContextType = {
@@ -55,6 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       avatar: `https://ui-avatars.com/api/?name=${email.split("@")[0]}&background=FF5722&color=fff`,
       isSeller: false,
       joinDate: new Date().toLocaleDateString(),
+      points: 1250,
     };
     
     setUser(newUser);
@@ -73,6 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       avatar: `https://ui-avatars.com/api/?name=${name}&background=FF5722&color=fff`,
       isSeller: false,
       joinDate: new Date().toLocaleDateString(),
+      points: 500,
     };
     
     setUser(newUser);

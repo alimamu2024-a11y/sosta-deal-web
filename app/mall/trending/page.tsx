@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -72,6 +72,7 @@ const TOP_BUYERS: TopBuyer[] = [
   { id: "8", name: "Morsheda Khatun", avatar: "https://randomuser.me/api/portraits/women/8.jpg", totalPurchased: 76, totalSpent: 29800, points: 1120, rank: 8, badge: "Bronze", badgeColor: "from-amber-600 to-orange-500", reviews: 10 },
 ];
 
+// Mock API for trending products
 const fetchTrendingProducts = async (page: number): Promise<Product[]> => {
   await new Promise(r => setTimeout(r, 400));
   const trendingItems = [
@@ -97,7 +98,7 @@ const fetchTrendingProducts = async (page: number): Promise<Product[]> => {
   }));
 };
 
-// Top Seller Card
+// Top Seller Card Component
 const TopSellerCard = ({ seller }: { seller: TopSeller }) => {
   const router = useRouter();
   return (
@@ -134,7 +135,7 @@ const TopSellerCard = ({ seller }: { seller: TopSeller }) => {
   );
 };
 
-// Top Buyer Card
+// Top Buyer Card Component
 const TopBuyerCard = ({ buyer }: { buyer: TopBuyer }) => {
   const router = useRouter();
   return (
@@ -171,7 +172,7 @@ const TopBuyerCard = ({ buyer }: { buyer: TopBuyer }) => {
   );
 };
 
-// Trending Product Card
+// Trending Product Card Component
 const TrendingCard = ({ product, onAddToCart, onWishlist, rank }: any) => {
   const router = useRouter();
   return (
@@ -184,7 +185,7 @@ const TrendingCard = ({ product, onAddToCart, onWishlist, rank }: any) => {
       onClick={() => router.push(`/mall/product/${product.id}`)}
     >
       <div className="relative">
-        <div className="relative aspect-[3/4] bg-gray-50">
+        <div className="relative aspect-3/4 bg-gray-50">
           <img src={product.image} alt={product.title} className="w-full h-full object-cover" loading="lazy" />
           <button onClick={(e) => { e.stopPropagation(); onWishlist(product); }} className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm p-1.5 rounded-full">
             <Heart size={14} className="text-gray-600" />
@@ -209,9 +210,10 @@ const TrendingCard = ({ product, onAddToCart, onWishlist, rank }: any) => {
   );
 };
 
+// Skeleton Components
 const SkeletonCard = () => (
   <div className="bg-white rounded-xl overflow-hidden shadow-sm">
-    <div className="aspect-[3/4] bg-gray-200 animate-pulse" />
+    <div className="aspect-3/4 bg-gray-200 animate-pulse" />
     <div className="p-2"><div className="h-2 bg-gray-200 rounded w-3/4 mb-2 animate-pulse" /><div className="h-2 bg-gray-200 rounded w-1/2 mb-2 animate-pulse" /><div className="h-3 bg-gray-200 rounded w-1/3 animate-pulse" /></div>
   </div>
 );
@@ -250,7 +252,13 @@ export default function TrendingPage() {
     loadingRef.current = false;
   }, [page, hasMore]);
 
-  useEffect(() => { setProducts([]); setPage(1); setHasMore(true); loadProducts(true); }, []);
+  useEffect(() => { 
+    setProducts([]); 
+    setPage(1); 
+    setHasMore(true); 
+    loadProducts(true); 
+  }, []);
+
   useEffect(() => {
     if (!observerRef.current || initialLoading) return;
     const observer = new IntersectionObserver((entries) => {
@@ -260,36 +268,99 @@ export default function TrendingPage() {
     return () => observer.disconnect();
   }, [loading, hasMore, initialLoading, loadProducts]);
 
-  const handleWishlist = (product: Product) => { setWishlistMsg(`❤️ ${product.title} উইশলিস্টে যোগ হয়েছে`); setTimeout(() => setWishlistMsg(""), 1500); };
-  const handleAddToCart = (product: Product) => { addToCart(product); setWishlistMsg(`🛒 ${product.title} কার্টে যোগ হয়েছে`); setTimeout(() => setWishlistMsg(""), 1500); };
+  const handleWishlist = (product: Product) => { 
+    setWishlistMsg(`❤️ ${product.title} উইশলিস্টে যোগ হয়েছে`); 
+    setTimeout(() => setWishlistMsg(""), 1500); 
+  };
+  
+  const handleAddToCart = (product: Product) => { 
+    addToCart(product); 
+    setWishlistMsg(`🛒 ${product.title} কার্টে যোগ হয়েছে`); 
+    setTimeout(() => setWishlistMsg(""), 1500); 
+  };
 
   const displaySellers = TOP_SELLERS.slice(0, 8);
   const displayBuyers = TOP_BUYERS.slice(0, 8);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <AnimatePresence>{wishlistMsg && (<motion.div initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -50 }} className="fixed top-14 left-1/2 -translate-x-1/2 bg-black/80 text-white px-3 py-1.5 rounded-full text-[11px] z-50 whitespace-nowrap">{wishlistMsg}</motion.div>)}</AnimatePresence>
+      <AnimatePresence>
+        {wishlistMsg && (
+          <motion.div 
+            initial={{ opacity: 0, y: -50 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -50 }} 
+            className="fixed top-14 left-1/2 -translate-x-1/2 bg-black/80 text-white px-3 py-1.5 rounded-full text-[11px] z-50 whitespace-nowrap"
+          >
+            {wishlistMsg}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white shadow-sm">
         <div className="px-4 py-3 flex items-center gap-3">
-          <button onClick={() => router.back()} className="p-1"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
-          <div className="flex-1"><div className="flex items-center gap-2"><Trophy size={24} className="text-yellow-500" /><h1 className="text-xl font-bold text-gray-800">Leaderboard 🔥</h1></div><p className="text-[10px] text-gray-400">Top sellers & buyers of the month</p></div>
-          <button onClick={() => router.push("/mall/cart")} className="relative p-1"><ShoppingBag size={22} className="text-gray-600" />{getCartCount() > 0 && (<span className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getCartCount()}</span>)}</button>
+          <button onClick={() => router.back()} className="p-1">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <Trophy size={24} className="text-yellow-500" />
+              <h1 className="text-xl font-bold text-gray-800">Leaderboard 🔥</h1>
+            </div>
+            <p className="text-[10px] text-gray-400">Top sellers & buyers of the month</p>
+          </div>
+          <button onClick={() => router.push("/mall/cart")} className="relative p-1">
+            <ShoppingBag size={22} className="text-gray-600" />
+            {getCartCount() > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                {getCartCount()}
+              </span>
+            )}
+          </button>
         </div>
       </header>
 
       {/* Toggle Buttons */}
       <div className="px-4 py-3 flex gap-3">
-        <button onClick={() => setActiveTab("sellers")} className={`flex-1 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === "sellers" ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg" : "bg-white text-gray-600 border border-gray-200"}`}><Store size={16} /> 🏪 Top Sellers</button>
-        <button onClick={() => setActiveTab("buyers")} className={`flex-1 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === "buyers" ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg" : "bg-white text-gray-600 border border-gray-200"}`}><Users size={16} /> 👥 Top Buyers</button>
+        <button 
+          onClick={() => setActiveTab("sellers")} 
+          className={`flex-1 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+            activeTab === "sellers" 
+              ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg" 
+              : "bg-white text-gray-600 border border-gray-200"
+          }`}
+        >
+          <Store size={16} /> 🏪 Top Sellers
+        </button>
+        <button 
+          onClick={() => setActiveTab("buyers")} 
+          className={`flex-1 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+            activeTab === "buyers" 
+              ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg" 
+              : "bg-white text-gray-600 border border-gray-200"
+          }`}
+        >
+          <Users size={16} /> 👥 Top Buyers
+        </button>
       </div>
 
       {/* Rewards Banner */}
       <div className="mx-3 mb-3 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl p-3">
         <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2"><Trophy size={24} className="text-white" /><div><p className="text-white text-[10px] opacity-80">Rewards Program</p><p className="text-white font-bold text-sm">Earn Points & Get Badges!</p></div></div>
-          <div className="text-right"><Gift size={24} className="text-white mx-auto" /><p className="text-white text-[9px] font-semibold">Shop & Earn</p></div>
+          <div className="flex items-center gap-2">
+            <Trophy size={24} className="text-white" />
+            <div>
+              <p className="text-white text-[10px] opacity-80">Rewards Program</p>
+              <p className="text-white font-bold text-sm">Earn Points & Get Badges!</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <Gift size={24} className="text-white mx-auto" />
+            <p className="text-white text-[9px] font-semibold">Shop & Earn</p>
+          </div>
         </div>
         <div className="flex justify-between mt-2 pt-2 border-t border-white/20">
           <div className="text-center"><Sparkles size={14} className="text-white mx-auto" /><p className="text-white text-[8px]">100 pts = ৳1</p></div>
@@ -330,19 +401,78 @@ export default function TrendingPage() {
 
       {/* Trending Products Section */}
       <div className="px-3">
-        <div className="flex justify-between items-center mb-3"><div className="flex items-center gap-2"><TrendingUp size={18} className="text-orange-500" /><h2 className="font-bold text-gray-800">Trending Products</h2></div><button className="text-[10px] text-orange-500">View All →</button></div>
-        {initialLoading ? (<div className="grid grid-cols-2 gap-2">{[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}</div>) : products.length === 0 ? (<div className="text-center py-16 bg-white rounded-xl"><div className="text-5xl mb-2">🔥</div><p className="text-gray-400 text-xs">No trending products found</p></div>) : (<div className="grid grid-cols-2 gap-2">{products.map((product, idx) => (<TrendingCard key={product.id} product={product} rank={idx} onAddToCart={handleAddToCart} onWishlist={handleWishlist} />))}</div>)}
-        <div ref={observerRef} className="flex justify-center py-4">{loading && !initialLoading && (<div className="flex items-center gap-2"><Loader2 className="animate-spin text-orange-500" size={18} /><span className="text-[10px] text-gray-400">Loading more...</span></div>)}</div>
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-2">
+            <TrendingUp size={18} className="text-orange-500" />
+            <h2 className="font-bold text-gray-800">Trending Products</h2>
+          </div>
+          <button className="text-[10px] text-orange-500">View All →</button>
+        </div>
+        
+        {initialLoading ? (
+          <div className="grid grid-cols-2 gap-2">
+            {[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-xl">
+            <div className="text-5xl mb-2">🔥</div>
+            <p className="text-gray-400 text-xs">No trending products found</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            {products.map((product, idx) => (
+              <TrendingCard 
+                key={product.id} 
+                product={product} 
+                rank={idx} 
+                onAddToCart={handleAddToCart} 
+                onWishlist={handleWishlist} 
+              />
+            ))}
+          </div>
+        )}
+        
+        <div ref={observerRef} className="flex justify-center py-4">
+          {loading && !initialLoading && (
+            <div className="flex items-center gap-2">
+              <Loader2 className="animate-spin text-orange-500" size={18} />
+              <span className="text-[10px] text-gray-400">Loading more...</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white flex justify-around items-center py-2.5 border-t shadow-lg z-50">
-        <button onClick={() => router.push("/mall")} className="flex flex-col items-center active:scale-95"><span className="text-xl">🏠</span><span className="text-[8px] font-semibold text-gray-500">HOME</span></button>
-        <button onClick={() => router.push("/mall/category")} className="flex flex-col items-center active:scale-95"><span className="text-xl">📂</span><span className="text-[8px] font-semibold text-gray-500">CATEGORY</span></button>
-        <button onClick={() => router.push("/mall/trending")} className="flex flex-col items-center active:scale-95"><span className="text-xl">🔥</span><span className="text-[8px] font-semibold text-gray-500">TRENDING</span></button>
-        <button onClick={() => router.push("/mall/cart")} className="flex flex-col items-center active:scale-95 relative"><span className="text-xl">🛒</span><span className="text-[8px] font-semibold text-gray-500">CART</span>{getCartCount() > 0 && <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[7px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5">{getCartCount()}</span>}</button>
-        <button onClick={() => router.push("/me")} className="flex flex-col items-center active:scale-95"><span className="text-xl">👤</span><span className="text-[8px] font-semibold text-gray-500">ME</span></button>
-        <button onClick={() => { if(confirm("মার্কেট প্লেসে ফিরে যাবেন?")) router.push("/"); }} className="flex flex-col items-center active:scale-95"><span className="text-xl">🚪</span><span className="text-[8px] font-semibold text-red-500">MALL EXIT</span></button>
+        <button onClick={() => router.push("/mall")} className="flex flex-col items-center active:scale-95">
+          <span className="text-xl">🏠</span>
+          <span className="text-[8px] font-semibold text-gray-500">HOME</span>
+        </button>
+        <button onClick={() => router.push("/mall/category")} className="flex flex-col items-center active:scale-95">
+          <span className="text-xl">📂</span>
+          <span className="text-[8px] font-semibold text-gray-500">CATEGORY</span>
+        </button>
+        <button onClick={() => router.push("/mall/trending")} className="flex flex-col items-center active:scale-95">
+          <span className="text-xl">🔥</span>
+          <span className="text-[8px] font-semibold text-gray-500">TRENDING</span>
+        </button>
+        <button onClick={() => router.push("/mall/cart")} className="flex flex-col items-center active:scale-95 relative">
+          <span className="text-xl">🛒</span>
+          <span className="text-[8px] font-semibold text-gray-500">CART</span>
+          {getCartCount() > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[7px] font-bold rounded-full min-w-3.5 h-3.5 flex items-center justify-center px-0.5">
+              {getCartCount()}
+            </span>
+          )}
+        </button>
+        <button onClick={() => router.push("/me")} className="flex flex-col items-center active:scale-95">
+          <span className="text-xl">👤</span>
+          <span className="text-[8px] font-semibold text-gray-500">ME</span>
+        </button>
+        <button onClick={() => { if(confirm("মার্কেট প্লেসে ফিরে যাবেন?")) router.push("/"); }} className="flex flex-col items-center active:scale-95">
+          <span className="text-xl">🚪</span>
+          <span className="text-[8px] font-semibold text-red-500">MALL EXIT</span>
+        </button>
       </nav>
     </div>
   );
