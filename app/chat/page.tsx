@@ -1,8 +1,7 @@
-// app/chat/page.tsx
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { Send, Image, Mic, Smile, MoreVertical, Camera, GalleryHorizontal, ArrowLeft } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Send, Image, Mic, Smile, MoreVertical, ArrowLeft, Camera, GalleryHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface Message {
@@ -15,86 +14,35 @@ interface Message {
   audioUrl?: string;
 }
 
-// ডামি মেসেজ জেনারেটর (পেজিনেশনের জন্য)
-const generateMockMessages = (page: number, limit: number): Message[] => {
-  const total = 50;
-  const start = (page - 1) * limit;
-  const end = start + limit;
-  const messages: Message[] = [];
-  for (let i = start; i < Math.min(end, total); i++) {
-    messages.push({
-      id: `msg_${i}`,
-      sender: i % 2 === 0 ? "seller" : "buyer",
-      text: `এটি একটি ডামি মেসেজ #${i + 1}`,
-      time: new Date(Date.now() - (total - i) * 60000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      type: "text",
-    });
-  }
-  return messages;
-};
-
 export default function ChatPage() {
   const router = useRouter();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([
+    { id: "1", sender: "seller", text: "হ্যালো! কীভাবে সাহায্য করতে পারি?", time: "১০:৩০ AM", type: "text" },
+    { id: "2", sender: "buyer", text: "পণ্যটি কি স্টকে আছে?", time: "১০:৩২ AM", type: "text" },
+    { id: "3", sender: "seller", text: "হ্যাঁ, স্টকে আছে। আজই অর্ডার করলে ১০% ছাড় পাবেন।", time: "১০:৩৩ AM", type: "text" },
+  ]);
   const [newMessage, setNewMessage] = useState("");
   const [currentUserId] = useState("buyer");
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showMediaOptions, setShowMediaOptions] = useState(false);
+  
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
-  const isLoadingRef = useRef(false);
 
-  const loadMessages = useCallback(async (pageNum: number) => {
-    if (isLoadingRef.current) return;
-    isLoadingRef.current = true;
-    setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const newMessages = generateMockMessages(pageNum, 5);
-    if (pageNum === 1) {
-      setMessages(newMessages);
-    } else {
-      setMessages(prev => [...newMessages, ...prev]);
-    }
-    setHasMore(newMessages.length === 5);
-    setLoading(false);
-    isLoadingRef.current = false;
-  }, []);
-
-  useEffect(() => {
-    loadMessages(1);
-  }, []);
-
-  const handleScroll = useCallback(() => {
-    if (!messagesContainerRef.current) return;
-    const { scrollTop } = messagesContainerRef.current;
-    if (scrollTop === 0 && hasMore && !loading) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      loadMessages(nextPage);
-    }
-  }, [hasMore, loading, page, loadMessages]);
-
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (container) {
-      container.addEventListener('scroll', handleScroll);
-      return () => container.removeEventListener('scroll', handleScroll);
-    }
-  }, [handleScroll]);
-
-  useEffect(() => {
+  // অটো স্ক্রল টু বটম
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
   }, [messages]);
 
   const handleSendText = () => {
@@ -106,15 +54,11 @@ export default function ChatPage() {
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       type: "text",
     };
-    setMessages(prev => [...prev, newMsg]);
+    setMessages((prev) => [...prev, newMsg]);
     setNewMessage("");
   };
 
-  const addEmoji = (emoji: string) => {
-    setNewMessage(prev => prev + emoji);
-    setShowEmojiPicker(false);
-  };
-
+  // ইমেজ হ্যান্ডলার
   const handleImageUpload = (file: File) => {
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -127,251 +71,134 @@ export default function ChatPage() {
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         type: "image",
       };
-      setMessages(prev => [...prev, newMsg]);
+      setMessages((prev) => [...prev, newMsg]);
     };
     reader.readAsDataURL(file);
     setShowMediaOptions(false);
   };
 
+  // ভয়েস মেসেজ লজিক (সংক্ষিপ্ত)
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) audioChunksRef.current.push(event.data);
-      };
-
+      mediaRecorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        const audioUrl = URL.createObjectURL(audioBlob);
         const newMsg: Message = {
           id: Date.now().toString(),
           sender: currentUserId,
           text: "🎤 ভয়েস মেসেজ",
-          audioUrl: audioUrl,
-          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          audioUrl: URL.createObjectURL(audioBlob),
+          time: "সদ্য",
           type: "audio",
         };
-        setMessages(prev => [...prev, newMsg]);
-        stream.getTracks().forEach(track => track.stop());
+        setMessages(p => [...p, newMsg]);
       };
-
       mediaRecorder.start();
       setIsRecording(true);
-      timerRef.current = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-      }, 1000);
-    } catch (err) {
-      console.error("Microphone not allowed", err);
-      alert("মাইক্রোফোন অ্যাক্সেস প্রয়োজন!");
-    }
+      timerRef.current = setInterval(() => setRecordingTime(p => p + 1), 1000);
+    } catch (err) { alert("মাইক্রোফোন পারমিশন দিন"); }
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      if (timerRef.current) clearInterval(timerRef.current);
-      setRecordingTime(0);
-    }
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+    clearInterval(timerRef.current!);
+    setRecordingTime(0);
   };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  const commonEmojis = ["😀", "😂", "❤️", "👍", "😢", "😡", "🎉", "🙏", "🔥", "🥰"];
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      {/* হেডার – ব্যাক বাটন যোগ করা হয়েছে */}
-      <div className="bg-white/90 backdrop-blur-md px-4 py-3 border-b flex items-center justify-between shadow-sm sticky top-0 z-10">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => router.back()}
-            className="p-2 rounded-full hover:bg-gray-100 transition"
-            aria-label="পেছনে যান"
-          >
-            <ArrowLeft size={22} className="text-gray-700" />
-          </button>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center text-white font-bold shadow-md">
-              S
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-800">সাপোর্ট টিম</h3>
-              <p className="text-[10px] text-green-500 flex items-center gap-1">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> অনলাইন
-              </p>
-            </div>
+    <div className="flex flex-col h-[100dvh] bg-[#f0f2f5] overflow-hidden">
+      {/* Header - Fixed */}
+      <header className="bg-white px-4 py-2 border-b flex items-center gap-3 shadow-sm z-20 shrink-0">
+        <button onClick={() => router.back()} className="p-1.5 rounded-full active:bg-gray-100">
+          <ArrowLeft size={20} className="text-gray-700" />
+        </button>
+        <div className="flex items-center gap-3 flex-1">
+          <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold shadow-inner relative">
+            S
+            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+          </div>
+          <div>
+            <h3 className="font-bold text-sm text-gray-800 leading-tight">সাপোর্ট টিম</h3>
+            <p className="text-[11px] text-green-600 font-medium">অনলাইন</p>
           </div>
         </div>
-        <button className="p-2 rounded-full hover:bg-gray-100 transition">
-          <MoreVertical size={20} className="text-gray-500" />
-        </button>
-      </div>
+        <MoreVertical size={20} className="text-gray-400" />
+      </header>
 
-      {/* মেসেজ লিস্ট – পেজিনেশন সহ */}
-      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 scroll-smooth">
-        {loading && page > 1 && <div className="text-center text-gray-400 text-xs">পুরোনো মেসেজ লোড হচ্ছে...</div>}
+      {/* Message Area - Scrollable */}
+      <main className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] bg-repeat bg-contain">
         {messages.map((msg) => {
           const isMe = msg.sender === currentUserId;
           return (
-            <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"} animate-fadeIn`}>
-              <div
-                className={`max-w-[80%] rounded-2xl px-4 py-2.5 shadow-sm ${
-                  isMe
-                    ? "bg-orange-500 text-white rounded-br-sm"
-                    : "bg-white text-gray-800 rounded-bl-sm border border-gray-200"
-                }`}
-              >
-                {msg.type === "image" && msg.imageUrl && (
-                  <img
-                    src={msg.imageUrl}
-                    alt="shared"
-                    className="max-w-full rounded-lg max-h-48 cursor-pointer"
-                    onClick={() => window.open(msg.imageUrl)}
-                  />
-                )}
-                {msg.type === "audio" && msg.audioUrl && (
-                  <audio controls src={msg.audioUrl} className="max-w-full h-8 rounded-full" />
-                )}
-                {msg.type === "text" && (
-                  <p className="text-sm leading-relaxed break-words">{msg.text}</p>
-                )}
-                <p className={`text-[10px] mt-1 ${isMe ? "text-orange-100" : "text-gray-400"}`}>
-                  {msg.time}
-                </p>
+            <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"} items-end gap-1`}>
+              {!isMe && <div className="w-6 h-6 rounded-full bg-gray-300 text-[10px] flex items-center justify-center shrink-0 mb-1">S</div>}
+              <div className={`max-w-[75%] px-3 py-2 shadow-sm relative ${
+                isMe ? "bg-[#f85606] text-white rounded-2xl rounded-tr-none" 
+                     : "bg-white text-gray-800 rounded-2xl rounded-tl-none border border-gray-100"
+              }`}>
+                {msg.type === "image" && <img src={msg.imageUrl} className="rounded-lg mb-1 max-h-60 w-full object-cover" alt="upload" />}
+                {msg.type === "audio" && <audio controls src={msg.audioUrl} className="w-48 h-8 scale-90 origin-left" />}
+                <p className="text-[13px] leading-snug">{msg.text}</p>
+                <span className={`text-[9px] block text-right mt-1 opacity-70`}>{msg.time}</span>
               </div>
             </div>
           );
         })}
         <div ref={messagesEndRef} />
-        {loading && page === 1 && <div className="text-center text-gray-400 text-xs">লোড হচ্ছে...</div>}
-      </div>
+      </main>
 
-      {/* ইনপুট এলাকা */}
-      <div className="p-3 bg-white/90 backdrop-blur-sm border-t flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          {/* ইমোজি পিকার */}
-          <div className="relative">
-            <button
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition"
-            >
-              <Smile size={22} />
+      {/* Input Area - Fixed at bottom */}
+      <footer className="bg-white p-2 pb-safe border-t shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-20">
+        <div className="flex items-center gap-1.5 max-w-4xl mx-auto">
+          <div className="flex items-center bg-gray-100 rounded-2xl px-2 flex-1 border border-transparent focus-within:border-orange-200 transition-all">
+            <button className="p-2 text-gray-500" onClick={() => setShowMediaOptions(!showMediaOptions)}>
+              <Camera size={20} />
             </button>
-            {showEmojiPicker && (
-              <div
-                ref={emojiPickerRef}
-                className="absolute bottom-12 left-0 bg-white rounded-xl shadow-lg p-2 flex gap-2 flex-wrap w-64 border z-20"
-              >
-                {commonEmojis.map((emoji) => (
-                  <button
-                    key={emoji}
-                    onClick={() => addEmoji(emoji)}
-                    className="text-2xl p-1 hover:bg-gray-100 rounded transition"
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* মিডিয়া বাটন */}
-          <div className="relative">
-            <button
-              onClick={() => setShowMediaOptions(!showMediaOptions)}
-              className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition"
-            >
-              <Image size={22} />
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSendText()}
+              placeholder="মেসেজ লিখুন..."
+              className="flex-1 bg-transparent border-none py-2.5 text-sm outline-none placeholder:text-gray-400"
+            />
+            <button className="p-2 text-gray-500">
+              <Smile size={20} />
             </button>
-            {showMediaOptions && (
-              <div className="absolute bottom-12 left-0 bg-white rounded-xl shadow-lg p-2 flex gap-2 z-20 border">
-                <button
-                  onClick={() => cameraInputRef.current?.click()}
-                  className="flex flex-col items-center p-2 hover:bg-gray-100 rounded-lg"
-                >
-                  <Camera size={22} className="text-orange-500" />
-                  <span className="text-[10px] mt-1">ক্যামেরা</span>
-                </button>
-                <button
-                  onClick={() => galleryInputRef.current?.click()}
-                  className="flex flex-col items-center p-2 hover:bg-gray-100 rounded-lg"
-                >
-                  <GalleryHorizontal size={22} className="text-blue-500" />
-                  <span className="text-[10px] mt-1">গ্যালারি</span>
-                </button>
-              </div>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              ref={cameraInputRef}
-              className="hidden"
-              onChange={(e) => {
-                if (e.target.files?.[0]) handleImageUpload(e.target.files[0]);
-              }}
-            />
-            <input
-              type="file"
-              accept="image/*"
-              ref={galleryInputRef}
-              className="hidden"
-              onChange={(e) => {
-                if (e.target.files?.[0]) handleImageUpload(e.target.files[0]);
-              }}
-            />
           </div>
 
-          {/* ভয়েস রেকর্ডার */}
-          <div className="relative">
-            {isRecording ? (
-              <button
-                onClick={stopRecording}
-                className="p-2 rounded-full bg-red-500 text-white animate-pulse"
-              >
-                <Mic size={22} />
-              </button>
-            ) : (
-              <button
-                onClick={startRecording}
-                className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition"
-              >
-                <Mic size={22} />
-              </button>
-            )}
-            {isRecording && (
-              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs bg-black text-white px-2 py-0.5 rounded-full whitespace-nowrap">
-                🎙️ {formatTime(recordingTime)}
-              </span>
-            )}
-          </div>
+          <button
+            onClick={isRecording ? stopRecording : startRecording}
+            className={`p-3 rounded-full transition-all ${isRecording ? "bg-red-500 text-white animate-pulse" : "bg-gray-100 text-gray-600 active:scale-90"}`}
+          >
+            <Mic size={20} />
+          </button>
 
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSendText()}
-            placeholder="মেসেজ লিখুন..."
-            className="flex-1 border-0 bg-gray-100 rounded-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-500 placeholder:text-gray-400"
-          />
           <button
             onClick={handleSendText}
             disabled={!newMessage.trim()}
-            className="p-2.5 rounded-full bg-orange-500 text-white disabled:opacity-50 shadow-md hover:shadow-lg transition"
+            className="p-3 rounded-full bg-[#f85606] text-white shadow-md active:scale-95 disabled:opacity-50 disabled:grayscale transition-all"
           >
-            <Send size={18} />
+            <Send size={20} strokeWidth={2.5} />
           </button>
         </div>
-      </div>
+
+        {/* Media Popup */}
+        {showMediaOptions && (
+          <div className="absolute bottom-16 left-4 bg-white rounded-2xl shadow-xl border p-2 flex gap-4 animate-in fade-in slide-in-from-bottom-2">
+            <button onClick={() => galleryInputRef.current?.click()} className="flex flex-col items-center gap-1 p-2">
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><GalleryHorizontal size={20}/></div>
+              <span className="text-[10px]">গ্যালারি</span>
+            </button>
+            <input type="file" ref={galleryInputRef} hidden accept="image/*" onChange={(e) => e.target.files && handleImageUpload(e.target.files[0])} />
+          </div>
+        )}
+      </footer>
     </div>
   );
 }

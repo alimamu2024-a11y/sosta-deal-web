@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { 
-  Search, ArrowLeft, ShoppingBag, Heart, Star, Eye, Flame, Loader2,
+  ArrowLeft, ShoppingBag, Heart, Star, Loader2,
   Menu, X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,7 +27,7 @@ const CATEGORY_LIST = [
   "ফার্নিচার", "গেমিং", "মিউজিক", "ক্যামেরা", "গিফট"
 ];
 
-// ক্যাটাগরি ভিত্তিক প্রোডাক্ট আনার ফাংশন (আগের মতো)
+// ক্যাটাগরি ভিত্তিক প্রোডাক্ট আনার ফাংশন
 const fetchProductsByCategory = async (category: string, page: number): Promise<Product[]> => {
   await new Promise(r => setTimeout(r, 400));
   
@@ -67,7 +67,7 @@ const fetchProductsByCategory = async (category: string, page: number): Promise<
   }));
 };
 
-// প্রোডাক্ট কার্ড কম্পোনেন্ট (আগের মতো)
+// প্রোডাক্ট কার্ড
 const ProductCard = ({ product, onAddToCart, onWishlist }: any) => {
   const router = useRouter();
   
@@ -130,7 +130,7 @@ export default function CategoryPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [wishlistMsg, setWishlistMsg] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false); // মোবাইলে সাইডবার টগল
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const observerRef = useRef<HTMLDivElement | null>(null);
   const loadingRef = useRef(false);
@@ -193,7 +193,6 @@ export default function CategoryPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       
-      {/* টোস্ট মেসেজ */}
       {wishlistMsg && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 bg-black/80 text-white px-3 py-1.5 rounded-full text-[11px] z-50 whitespace-nowrap">
           {wishlistMsg}
@@ -215,26 +214,22 @@ export default function CategoryPage() {
               </span>
             )}
           </button>
-          {/* মোবাইলে সাইডবার খোলার বাটন */}
           <button onClick={() => setSidebarOpen(true)} className="md:hidden p-1">
             <Menu size={22} />
           </button>
         </div>
       </header>
 
-      {/* মূল কন্টেন্ট – সাইডবার ও গ্রিড */}
+      {/* মূল লেআউট: সাইডবার + গ্রিড */}
       <div className="flex relative">
-        {/* ডেস্কটপ সাইডবার (md স্ক্রিন থেকে দৃশ্যমান) */}
+        {/* ডেস্কটপ সাইডবার (md স্ক্রিন থেকে দেখাবে) */}
         <aside className="hidden md:block w-64 bg-white border-r sticky top-[65px] h-[calc(100vh-65px)] overflow-y-auto p-3">
           <h2 className="font-bold text-gray-800 mb-3 px-2">সব ক্যাটাগরি</h2>
           <div className="space-y-1">
             {CATEGORY_LIST.map((cat) => (
               <button
                 key={cat}
-                onClick={() => {
-                  setSelectedCategory(cat);
-                  setSidebarOpen(false);
-                }}
+                onClick={() => setSelectedCategory(cat)}
                 className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
                   selectedCategory === cat
                     ? "bg-orange-500 text-white font-semibold"
@@ -247,7 +242,7 @@ export default function CategoryPage() {
           </div>
         </aside>
 
-        {/* মোবাইলের স্লাইড-ইন সাইডবার */}
+        {/* মোবাইলে স্লাইড-ইন সাইডবার */}
         <AnimatePresence>
           {sidebarOpen && (
             <>
@@ -291,9 +286,9 @@ export default function CategoryPage() {
           )}
         </AnimatePresence>
 
-        {/* প্রোডাক্ট গ্রিড এলাকা */}
+        {/* প্রোডাক্ট গ্রিড */}
         <main className="flex-1 p-3">
-          {/* ব্যানার (ঐচ্ছিক) */}
+          {/* ব্যানার */}
           <div className="h-28 mb-3 rounded-xl overflow-hidden bg-gradient-to-r from-orange-500 to-red-500">
             <div className="h-full flex flex-col justify-center px-5">
               <h2 className="text-white font-bold text-lg">{selectedCategory}</h2>
@@ -302,7 +297,6 @@ export default function CategoryPage() {
             </div>
           </div>
 
-          {/* প্রোডাক্ট গ্রিড – ২ কলাম */}
           {loading && products.length === 0 ? (
             <div className="grid grid-cols-2 gap-3">
               {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}

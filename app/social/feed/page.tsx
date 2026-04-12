@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Bell, Plus, Home, Search, MessageCircle, Image as ImageIcon, Video } from "lucide-react"; 
+import { Bell, Plus, Home, Search, MessageCircle, ImageIcon, Smile } from "lucide-react"; 
 import StoriesBox from "@/components/social/StoriesBox";
 import PostCard from "@/components/social/PostCard";
 import CreatePostModal from "@/components/social/CreatePostModal";
@@ -18,90 +18,91 @@ export default function FeedPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // ইনিশিয়াল ডাটা লোড
     setPosts(getPostsWithUsers());
   }, []);
 
-  // ⚡ Lazy Loading / Virtualization Engine
   const rowVirtualizer = useVirtualizer({
     count: posts.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 450, // পোস্টের আনুমানিক হাইট
-    overscan: 5, // মেমোরিতে আগেভাগে ৫টি পোস্ট লোড করে রাখবে
+    estimateSize: () => 400,
+    overscan: 5,
   });
 
   return (
-    <div className="bg-[#f0f2f5] min-h-screen overflow-x-hidden selection:bg-blue-100">
+    <div className="bg-[#f0f2f5] min-h-screen">
       
-      {/* --- ফিক্সড হেডার (Facebook Blue Style) --- */}
-      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div className="flex justify-between items-center px-4 py-2">
-          <h1 className="text-3xl font-black text-[#1877F2] tracking-tighter">facebook</h1>
-          <div className="flex items-center gap-2">
-            <button className="p-2 bg-gray-100 rounded-full active:scale-90 transition">
-              <Search size={20} className="text-black" />
-            </button>
-            <button onClick={() => router.push("/chat")} className="p-2 bg-gray-100 rounded-full active:scale-90 transition relative">
-              <MessageCircle size={20} className="text-black" />
-              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] px-1.5 rounded-full font-bold">3</span>
-            </button>
-          </div>
+      {/* --- আধুনিক হেডার (Sosta Deal ব্র্যান্ডিং) --- */}
+      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm px-4 py-2 flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          {/* মেইন হোম বাটন (ই-কমার্স পেজে যাওয়ার জন্য) */}
+          <button 
+            onClick={() => router.push("/")} 
+            className="p-2 bg-orange-50 text-orange-600 rounded-full hover:bg-orange-100 transition"
+          >
+            <Home size={22} strokeWidth={2.5} />
+          </button>
+          <h1 className="text-2xl font-black bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent tracking-tighter">
+            Sosta Deal
+          </h1>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <button className="p-2 bg-gray-100 rounded-full"><Search size={20}/></button>
+          <button onClick={() => router.push("/chat")} className="p-2 bg-gray-100 rounded-full relative">
+            <MessageCircle size={20}/>
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1 rounded-full">5</span>
+          </button>
         </div>
       </div>
 
-      {/* --- মেইন স্ক্রল এরিয়া --- */}
-      <div 
-        ref={scrollRef} 
-        className="h-[calc(100vh-60px)] overflow-y-auto pb-24 scrollbar-hide"
-      >
+      {/* --- মেইন বডি --- */}
+      <div ref={scrollRef} className="h-[calc(100vh-60px)] overflow-y-auto pb-20">
         
-        {/* 1. What's on your mind (ফেসবুক এর মতো বাইরে) */}
-        <div className="bg-white p-4 mb-3 shadow-sm">
+        {/* 'আপনার মনে কি আছে' বক্স - ক্লিন ডিজাইন */}
+        <div className="bg-white p-4 mb-2 shadow-sm border-b">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 border border-gray-100 flex-shrink-0 overflow-hidden">
-              <img src="https://i.pravatar.cc/150?u=rubel" alt="user" className="w-full h-full object-cover" />
+            <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border">
+              <img src="https://i.pravatar.cc/150?u=me" alt="user" className="w-full h-full object-cover" />
             </div>
             <button 
               onClick={() => setShowCreateModal(true)}
-              className="flex-1 bg-[#f0f2f5] hover:bg-gray-200 text-left px-4 py-2.5 rounded-full text-gray-600 text-[15px] transition-colors"
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-left px-4 py-2.5 rounded-full text-gray-500 text-sm"
             >
               আপনার মনে কি আছে?
             </button>
           </div>
-          
-          <div className="flex justify-between mt-3 pt-3 border-t border-gray-100">
-             <button onClick={() => setShowCreateModal(true)} className="flex-1 flex items-center justify-center gap-2 text-gray-500 text-sm font-semibold py-2 hover:bg-gray-50 rounded-lg">
-                <Video size={20} className="text-red-500" /> লাইভ
+          <div className="flex justify-around mt-3 pt-2 border-t border-gray-50">
+             <button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2 text-gray-600 text-xs font-bold py-1">
+                <ImageIcon size={18} className="text-green-500" /> ফটো/ভিডিও
              </button>
-             <button onClick={() => setShowCreateModal(true)} className="flex-1 flex items-center justify-center gap-2 text-gray-500 text-sm font-semibold py-2 hover:bg-gray-50 rounded-lg">
-                <ImageIcon size={20} className="text-green-500" /> ফটো
+             <button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2 text-gray-600 text-xs font-bold py-1">
+                <Smile size={18} className="text-yellow-500" /> ফিলিং
              </button>
-             <button onClick={() => setShowCreateModal(true)} className="flex-1 flex items-center justify-center gap-2 text-gray-500 text-sm font-semibold py-2 hover:bg-gray-50 rounded-lg">
-                <Plus size={20} className="text-blue-500" /> স্ট্যাটাস
+             <button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2 text-gray-600 text-xs font-bold py-1">
+                <Plus size={18} className="text-blue-500" /> স্ট্যাটাস
              </button>
           </div>
         </div>
 
-        {/* 2. স্টোরি সেকশন (একসাথে ৫-৬টা দেখার উপযোগী) */}
-        <div className="bg-white py-4 mb-3 shadow-sm overflow-hidden">
+        {/* স্টোরি বক্স */}
+        <div className="bg-white py-4 mb-2 shadow-sm">
           <StoriesBox /> 
         </div>
 
-        {/* 3. পোস্ট ফিড (Lazzy Load / Virtual List) */}
+        {/* পোস্ট ফিড (Lazy Loading) */}
         <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: "relative" }}>
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
             const post = posts[virtualRow.index];
             return (
               <div
                 key={virtualRow.key}
-                className="w-full max-w-full"
                 style={{
                   position: "absolute",
                   top: 0,
                   left: 0,
                   width: "100%",
                   transform: `translateY(${virtualRow.start}px)`,
-                  paddingBottom: "8px"
+                  padding: "0 8px 10px 8px"
                 }}
               >
                 <PostCard post={post} />
@@ -109,22 +110,11 @@ export default function FeedPage() {
             );
           })}
         </div>
-
-        {/* লোডার ইন্ডিকেটর */}
-        {posts.length > 0 && (
-          <div className="flex justify-center py-5">
-            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        )}
       </div>
 
-      {/* ক্রিয়েট পোস্ট মোডাল */}
       <AnimatePresence>
         {showCreateModal && (
-          <CreatePostModal 
-            onClose={() => setShowCreateModal(false)} 
-            onPostCreated={() => setPosts(getPostsWithUsers())} 
-          />
+          <CreatePostModal onClose={() => setShowCreateModal(false)} onPostCreated={() => setPosts(getPostsWithUsers())} />
         )}
       </AnimatePresence>
     </div>
