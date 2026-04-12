@@ -441,39 +441,6 @@ export default function TrendingPage() {
           )}
         </div>
       </div>
-
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white flex justify-around items-center py-2.5 border-t shadow-lg z-50">
-        <button onClick={() => router.push("/mall")} className="flex flex-col items-center active:scale-95">
-          <span className="text-xl">🏠</span>
-          <span className="text-[8px] font-semibold text-gray-500">HOME</span>
-        </button>
-        <button onClick={() => router.push("/mall/category")} className="flex flex-col items-center active:scale-95">
-          <span className="text-xl">📂</span>
-          <span className="text-[8px] font-semibold text-gray-500">CATEGORY</span>
-        </button>
-        <button onClick={() => router.push("/mall/trending")} className="flex flex-col items-center active:scale-95">
-          <span className="text-xl">🔥</span>
-          <span className="text-[8px] font-semibold text-gray-500">TRENDING</span>
-        </button>
-        <button onClick={() => router.push("/mall/cart")} className="flex flex-col items-center active:scale-95 relative">
-          <span className="text-xl">🛒</span>
-          <span className="text-[8px] font-semibold text-gray-500">CART</span>
-          {getCartCount() > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[7px] font-bold rounded-full min-w-3.5 h-3.5 flex items-center justify-center px-0.5">
-              {getCartCount()}
-            </span>
-          )}
-        </button>
-        <button onClick={() => router.push("/me")} className="flex flex-col items-center active:scale-95">
-          <span className="text-xl">👤</span>
-          <span className="text-[8px] font-semibold text-gray-500">ME</span>
-        </button>
-        <button onClick={() => { if(confirm("মার্কেট প্লেসে ফিরে যাবেন?")) router.push("/"); }} className="flex flex-col items-center active:scale-95">
-          <span className="text-xl">🚪</span>
-          <span className="text-[8px] font-semibold text-red-500">MALL EXIT</span>
-        </button>
-      </nav>
     </div>
   );
 }

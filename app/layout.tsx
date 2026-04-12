@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
+import { ChatProvider } from "@/context/ChatContext";
 import "./globals.css";
 import ClientLayout from "./ClientLayout";
 
@@ -31,7 +32,9 @@ export default function RootLayout({
       <body className="min-h-screen bg-gray-50 antialiased">
         <AuthProvider>
           <CartProvider>
-            <ClientLayout>{children}</ClientLayout>
+            <ChatProvider>
+              <ClientLayout>{children}</ClientLayout>
+            </ChatProvider>
           </CartProvider>
         </AuthProvider>
       </body>

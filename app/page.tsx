@@ -42,7 +42,7 @@ const SostaDealFinalUpgrade = () => {
       
       {/* 🟢 ১. ওয়েবসাইট হেডার - SostaSocial বাটন সহ */}
       <header className="bg-white px-4 py-3 sticky top-0 z-[100] border-b border-gray-100 shadow-sm">
-        <div className="max-w-[1200px] mx-auto flex justify-between items-center gap-4">
+        <div className="max-w-300 mx-auto flex justify-between items-center gap-4">
           
           {/* সার্চ বার */}
           <div className="flex items-center bg-[#f0f1f5] rounded-xl px-4 py-1.5 border focus-within:border-[#f85606] transition-all flex-1">
@@ -71,7 +71,7 @@ const SostaDealFinalUpgrade = () => {
               initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.5 }}
               className={`absolute inset-0 flex flex-col items-center justify-center text-white p-8
                 ${currentSlide === 0 ? 'bg-gradient-to-br from-[#f85606] to-[#ff8e53]' : 
-                  currentSlide === 1 ? 'bg-gradient-to-br from-[#210124] to-[#750d37]' : 
+                  currentSlide === 1 ? 'bg-linear-to-br from-[#210124] to-[#750d37]' : 
                   'bg-gradient-to-br from-[#004e92] to-[#000428]'}`}
             >
               <h2 className="text-3xl md:text-6xl font-black italic uppercase tracking-tighter leading-none text-center">
@@ -129,62 +129,7 @@ const SostaDealFinalUpgrade = () => {
       </section>
     </div>
 
-      {/* 🟢 ৫. মোবাইল বটম ন্যাভ - সোশ্যাল বাটন সহ */}
-    <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-5px_25px_rgba(0,0,0,0.07)] px-2 py-3 z-50 rounded-t-[35px]">
-      <div className="flex items-end justify-between max-w-md mx-auto relative gap-0.5">
-        
-        {/* 🏠 HOME */}
-        <Link href="/" className="flex flex-col items-center flex-1 group">
-          <HomeIcon className="text-[#f85606] group-active:scale-90 transition-transform" size={24} />
-          <span className="text-[9px] font-black mt-1 text-[#f85606] uppercase">HOME</span>
-        </Link>
-
-        {/* 🎤 গ্ৰামের হাট */}
-        <Link href="/grammer-haat" className="flex flex-col items-center flex-1 group">
-          <Mic className="text-green-600 group-active:scale-90 transition-transform" size={22} />
-          <span className="text-[9px] font-black mt-1 text-green-700 uppercase">গ্ৰামের হাট</span>
-        </Link>
-
-        {/* 🎀 টুনি MALL */}
-        <Link href="/mall" className="flex flex-col items-center flex-1 group">
-          <div className="relative">
-            <ShoppingBag className="text-[#FF1493] group-active:scale-90 transition-transform" size={22} />
-            <span className="absolute -top-1 -right-1 text-[8px]">✨</span>
-          </div>
-          <span className="text-[9px] font-black mt-1 text-[#FF1493] italic uppercase">টুনি MALL</span>
-        </Link>
-
-        {/* ➕ প্লাস বাটন (Post Add) */}
-        <div className="relative flex-1 flex justify-center -mt-8">
-          <button 
-            onClick={() => setIsSellFormOpen(true)} 
-            className="bg-[#f85606] p-3.5 rounded-[22px] shadow-lg shadow-orange-200 flex items-center justify-center border-[3px] border-white active:scale-95 transition-all outline-none"
-          >
-            <Plus className="text-white" size={28} strokeWidth={4} />
-          </button>
-        </div>
-
-        {/* 💬 CHAT */}
-        <Link href="/chat" className="flex flex-col items-center flex-1 group relative">
-          <MessageCircleMore className="text-red-600 group-active:scale-90 transition-transform" size={22} />
-          <span className="absolute top-0 right-2 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full"></span>
-          <span className="text-[9px] font-black mt-1 text-red-700 uppercase">CHAT</span>
-        </Link>
-
-        {/* 👥 SOCIAL */}
-        <Link href="/social" className="flex flex-col items-center flex-1 group">
-          <Users className="text-sky-600 group-active:scale-90 transition-transform" size={22} />
-          <span className="text-[9px] font-black mt-1 text-sky-700 uppercase">SOCIAL</span>
-        </Link>
-
-        {/* 👤 DASHBOARD - এখন লগইন পেজে নিয়ে যাবে */}
-        <Link href="/login" className="flex flex-col items-center flex-1 group">
-          <User className="text-gray-400 group-active:scale-90 transition-transform" size={22} />
-          <span className="text-[9px] font-black mt-1 text-gray-500 uppercase tracking-tighter">dashboard</span>
-        </Link>
-      </div>
-    </footer>
-
+      
     {/* 🕕 ৬. পোস্ট অ্যাড ফর্ম কম্পোনেন্ট */}
     <PostAdForm 
       isOpen={isSellFormOpen} 

@@ -1,24 +1,17 @@
+// context/AuthContext.tsx
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-
-type User = {
-  id: string;
-  name: string;
-  email: string;
-  avatar: string;
-  isSeller: boolean;
-  joinDate?: string;
-  points?: number;
-};
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createBrowserClient } from "@supabase/ssr";
+import { User } from "@supabase/supabase-js";
 
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
-  becomeSeller: () => void;
+  login: (email: string) => Promise<void>;
+  logout: () => Promise<void>;
+  becomeSeller: () => Promise<void>;
+  isSeller: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,68 +27,80 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSeller, setIsSeller] = useState(false);
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("sosta_user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
-  }, []);
-
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 500));
-    
-    const newUser: User = {
-      id: "1",
-      name: email.split("@")[0],
-      email: email,
-      avatar: `https://ui-avatars.com/api/?name=${email.split("@")[0]}&background=FF5722&color=fff`,
-      isSeller: false,
-      joinDate: new Date().toLocaleDateString(),
-      points: 1250,
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      
+      // চেক করুন ইউজার সেলার কিনা
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("is_seller")
+          .eq("id", user.id)
+          .single();
+        setIsSeller(profile?.is_seller || false);
+      }
+      setIsLoading(false);
     };
-    
-    setUser(newUser);
-    localStorage.setItem("sosta_user", JSON.stringify(newUser));
-    setIsLoading(false);
-  };
 
-  const signup = async (name: string, email: string, password: string) => {
+    getUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setUser(session?.user || null);
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("is_seller")
+          .eq("id", session.user.id)
+          .single();
+        setIsSeller(profile?.is_seller || false);
+      } else {
+        setIsSeller(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
+
+  const login = async (email: string) => {
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 500));
-    
-    const newUser: User = {
-      id: Date.now().toString(),
-      name: name,
-      email: email,
-      avatar: `https://ui-avatars.com/api/?name=${name}&background=FF5722&color=fff`,
-      isSeller: false,
-      joinDate: new Date().toLocaleDateString(),
-      points: 500,
-    };
-    
-    setUser(newUser);
-    localStorage.setItem("sosta_user", JSON.stringify(newUser));
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) throw error;
     setIsLoading(false);
   };
 
-  const logout = () => {
-    localStorage.removeItem("sosta_user");
-    setUser(null);
+  const logout = async () => {
+    await supabase.auth.signOut();
   };
 
-  const becomeSeller = () => {
-    if (user) {
-      const updatedUser = { ...user, isSeller: true };
-      setUser(updatedUser);
-      localStorage.setItem("sosta_user", JSON.stringify(updatedUser));
+  const becomeSeller = async () => {
+    if (!user) return;
+    
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_seller: true })
+      .eq("id", user.id);
+    
+    if (!error) {
+      setIsSeller(true);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, logout, becomeSeller }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, becomeSeller, isSeller }}>
       {children}
     </AuthContext.Provider>
   );

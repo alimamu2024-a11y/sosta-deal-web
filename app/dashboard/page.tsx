@@ -53,19 +53,20 @@ export default function DashboardPage() {
   const { user, logout, isLoading } = useAuth();
   const [userAds, setUserAds] = useState(initialUserAds);
   const [activeTab, setActiveTab] = useState("overview");
-  const [profileImage, setProfileImage] = useState(user?.avatar || "");
+  // নিরাপদে প্রপার্টি অ্যাক্সেস - যেটা থাকে সেটা নেবে
+  const [profileImage, setProfileImage] = useState<string | null>(
+    (user as any)?.avatar || (user as any)?.avatar_url || null
+  );
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [boostModal, setBoostModal] = useState<{ open: boolean; adId: string | null }>({ open: false, adId: null });
   const [auctionModal, setAuctionModal] = useState<{ open: boolean; auction: any | null }>({ open: false, auction: null });
   const [bidAmount, setBidAmount] = useState("");
 
-  // রিডাইরেক্ট
   useEffect(() => {
     if (!isLoading && !user) router.push("/login");
   }, [isLoading, user, router]);
 
-  // ইমেজ কম্প্রেশন
   const compressImage = async (file: File): Promise<File> => {
     const options = { maxSizeMB: 0.05, maxWidthOrHeight: 600, useWebWorker: true, fileType: "image/jpeg" };
     try { return await imageCompression(file, options); } catch { return file; }
@@ -76,7 +77,8 @@ export default function DashboardPage() {
     if (!file) return;
     setIsUploading(true);
     const compressedFile = await compressImage(file);
-    setProfileImage(URL.createObjectURL(compressedFile));
+    const imageUrl = URL.createObjectURL(compressedFile);
+    setProfileImage(imageUrl);
     alert("প্রোফাইল ছবি আপডেট হয়েছে (মক)");
     setIsUploading(false);
   };
@@ -94,16 +96,30 @@ export default function DashboardPage() {
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 size={32} className="animate-spin text-orange-500" /></div>;
   if (!user) return null;
 
+  // ইউজারের নাম ও অন্যান্য তথ্য নিরাপদে বের করা
+  const displayName = (user as any).full_name || (user as any).name || (user as any).email?.split('@')[0] || "ইউজার";
+  const joinDate = (user as any).created_at 
+    ? new Date((user as any).created_at).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long' }) 
+    : (user as any).joinDate || "জানুয়ারি ২০২৪";
+  const isSeller = (user as any).is_seller || (user as any).role === "seller" || false;
+  const userEmail = (user as any).email || "";
+  const profileImageSrc = profileImage && profileImage.trim() !== "" ? profileImage : null;
+
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
-      {/* হেডার – হোম বাটন + প্রোফাইল */}
       <div className="bg-linear-to-r from-orange-500 to-red-500 text-white p-5">
         <div className="flex justify-between items-start">
-          <div><h1 className="text-2xl font-bold">মার্কেটপ্লেস ড্যাশবোর্ড</h1><p className="text-sm opacity-90">স্বাগতম, {user.name}</p></div>
+          <div><h1 className="text-2xl font-bold">মার্কেটপ্লেস ড্যাশবোর্ড</h1><p className="text-sm opacity-90">স্বাগতম, {displayName}</p></div>
           <div className="flex items-center gap-3">
             <button onClick={() => router.push("/")} className="bg-white/20 p-2 rounded-full hover:bg-white/30"><Home size={20} /></button>
             <div className="relative">
-              <img src={profileImage} className="w-12 h-12 rounded-full border-2 border-white shadow-md object-cover" />
+              {profileImageSrc ? (
+                <img src={profileImageSrc} className="w-12 h-12 rounded-full border-2 border-white shadow-md object-cover" />
+              ) : (
+                <div className="w-12 h-12 rounded-full border-2 border-white shadow-md bg-gray-300 flex items-center justify-center">
+                  <span className="text-gray-600 text-sm font-bold">{displayName.charAt(0).toUpperCase()}</span>
+                </div>
+              )}
               <button onClick={() => fileInputRef.current?.click()} className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-md" disabled={isUploading}>
                 {isUploading ? <Loader2 size={12} className="text-orange-500 animate-spin" /> : <Camera size={12} className="text-orange-500" />}
               </button>
@@ -112,9 +128,9 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="mt-4 space-y-1 text-sm">
-          <div className="flex items-center gap-2"><Mail size={14} /> {user.email}</div>
-          <div className="flex items-center gap-2"><Calendar size={14} /> যুক্ত হয়েছেন {user.joinDate || "জানুয়ারি ২০২৪"}</div>
-          <div className="flex items-center gap-2"><Star size={14} /> সদস্য</div>
+          <div className="flex items-center gap-2"><Mail size={14} /> {userEmail}</div>
+          <div className="flex items-center gap-2"><Calendar size={14} /> যুক্ত হয়েছেন {joinDate}</div>
+          <div className="flex items-center gap-2"><Star size={14} /> {isSeller ? "বিক্রেতা" : "সদস্য"}</div>
         </div>
         <div className="grid grid-cols-2 gap-3 mt-5">
           <div className="bg-white/10 rounded-xl p-3"><p className="text-xs opacity-80">মোট বিজ্ঞাপন</p><p className="text-xl font-bold">{userAds.length}</p></div>
@@ -122,7 +138,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ট্যাব নেভিগেশন */}
+      {/* ট্যাব নেভিগেশন - আগের মতোই */}
       <div className="flex overflow-x-auto bg-white border-b px-4 gap-1 sticky top-0 z-10">
         {["overview", "myads", "auctions", "earnings", "gramerhaat", "social", "messages", "affiliate", "settings"].map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)} className={`py-3 px-3 text-sm font-medium capitalize border-b-2 transition ${activeTab === tab ? "border-orange-500 text-orange-600" : "border-transparent text-gray-500"}`}>
@@ -132,7 +148,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="p-4">
-        {/* ===================== ওভারভিউ ট্যাব ===================== */}
+        {/* ওভারভিউ ট্যাব */}
         {activeTab === "overview" && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -146,7 +162,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ===================== মাই অ্যাডস ট্যাব (বুস্ট অপশন সহ) ===================== */}
+        {/* মাই অ্যাডস ট্যাব */}
         {activeTab === "myads" && (
           <div className="space-y-3">
             {userAds.map(ad => (
@@ -163,7 +179,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ===================== লাইভ অকশন ট্যাব ===================== */}
+        {/* লাইভ অকশন ট্যাব */}
         {activeTab === "auctions" && (
           <div className="space-y-3">
             {mockAuctions.map(auction => (
@@ -176,7 +192,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ===================== আয় / পেমেন্ট ট্যাব ===================== */}
+        {/* আয় ট্যাব */}
         {activeTab === "earnings" && (
           <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
             <h3 className="font-bold text-lg">আয়ের সারাংশ</h3>
@@ -186,18 +202,18 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ===================== গ্রামের হাট ট্যাব ===================== */}
+        {/* গ্রামের হাট ট্যাব */}
         {activeTab === "gramerhaat" && (
           <div className="space-y-3">{mockGramerHaatAds.map(ad => (<div key={ad.id} className="bg-white rounded-2xl p-3 shadow-sm flex gap-3"><img src={ad.image} className="w-16 h-16 rounded-xl object-cover" /><div><h3 className="font-semibold">{ad.title}</h3><p className="text-xs text-gray-500">{ad.location} • {ad.time}</p><p className="text-orange-500 font-bold">৳{ad.price}</p></div></div>))}</div>
         )}
 
-        {/* ===================== সোশ্যাল অ্যাক্টিভিটি ট্যাব ===================== */}
+        {/* সোশ্যাল ট্যাব */}
         {activeTab === "social" && (<div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">{mockSocialActivities.map(act => (<div key={act.id} className="flex items-center gap-3 border-b pb-2"><img src={act.avatar} className="w-8 h-8 rounded-full" /><div><p className="text-sm font-medium">{act.user}</p><p className="text-xs text-gray-500">{act.action} • {act.time}</p></div></div>))}</div>)}
 
-        {/* ===================== চ্যাট / মেসেজ ট্যাব ===================== */}
+        {/* চ্যাট ট্যাব */}
         {activeTab === "messages" && (<div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">{mockMessages.map(msg => (<div key={msg.id} className="flex items-center gap-3 border-b pb-2"><img src={msg.avatar} className="w-10 h-10 rounded-full" /><div><p className="font-semibold">{msg.name}</p><p className="text-xs text-gray-500">{msg.message}</p></div><div className="ml-auto text-xs text-gray-400">{msg.time}</div></div>))}<button className="w-full text-orange-500 text-sm font-semibold">সব চ্যাট দেখুন →</button></div>)}
 
-        {/* ===================== অ্যাফিলিয়েট মার্কেটিং ট্যাব ===================== */}
+        {/* অ্যাফিলিয়েট ট্যাব */}
         {activeTab === "affiliate" && (
           <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
             <h3 className="font-bold text-lg">অ্যাফিলিয়েট প্রোগ্রাম</h3>
@@ -207,7 +223,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ===================== সেটিংস ট্যাব (পূর্বের মতো) ===================== */}
+        {/* সেটিংস ট্যাব */}
         {activeTab === "settings" && (
           <div className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
             <button className="w-full bg-gray-100 py-3 rounded-xl text-sm font-semibold">পাসওয়ার্ড পরিবর্তন</button>

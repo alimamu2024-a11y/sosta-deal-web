@@ -4,9 +4,10 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { 
-  Search, ArrowLeft, ShoppingBag, Heart, Star, Eye, Flame, Loader2
+  Search, ArrowLeft, ShoppingBag, Heart, Star, Eye, Flame, Loader2,
+  Menu, X
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 type Product = {
   id: string;
@@ -18,7 +19,7 @@ type Product = {
   sold: number;
 };
 
-// ক্যাটাগরি লিস্ট
+// ক্যাটাগরি লিস্ট (আপনার বিদ্যমান)
 const CATEGORY_LIST = [
   "ফ্যাশন", "ইলেকট্রনিক্স", "হোম", "বিউটি", "স্পোর্টস",
   "মোবাইল", "কম্পিউটার", "ঘড়ি", "ব্যাগ", "জুতা",
@@ -26,7 +27,7 @@ const CATEGORY_LIST = [
   "ফার্নিচার", "গেমিং", "মিউজিক", "ক্যামেরা", "গিফট"
 ];
 
-// ক্যাটাগরি ভিত্তিক প্রোডাক্ট আনার ফাংশন
+// ক্যাটাগরি ভিত্তিক প্রোডাক্ট আনার ফাংশন (আগের মতো)
 const fetchProductsByCategory = async (category: string, page: number): Promise<Product[]> => {
   await new Promise(r => setTimeout(r, 400));
   
@@ -66,7 +67,7 @@ const fetchProductsByCategory = async (category: string, page: number): Promise<
   }));
 };
 
-// প্রোডাক্ট কার্ড কম্পোনেন্ট
+// প্রোডাক্ট কার্ড কম্পোনেন্ট (আগের মতো)
 const ProductCard = ({ product, onAddToCart, onWishlist }: any) => {
   const router = useRouter();
   
@@ -129,6 +130,7 @@ export default function CategoryPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [wishlistMsg, setWishlistMsg] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false); // মোবাইলে সাইডবার টগল
   
   const observerRef = useRef<HTMLDivElement | null>(null);
   const loadingRef = useRef(false);
@@ -213,104 +215,127 @@ export default function CategoryPage() {
               </span>
             )}
           </button>
+          {/* মোবাইলে সাইডবার খোলার বাটন */}
+          <button onClick={() => setSidebarOpen(true)} className="md:hidden p-1">
+            <Menu size={22} />
+          </button>
         </div>
       </header>
 
-      {/* ক্যাটাগরি ট্যাব */}
-      <div className="bg-white border-b sticky top-[57px] z-30">
-        <div className="flex gap-2 overflow-x-auto px-3 py-2 no-scrollbar">
-          {CATEGORY_LIST.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 text-xs rounded-full whitespace-nowrap transition-all ${
-                selectedCategory === cat 
-                  ? "bg-orange-500 text-white font-semibold" 
-                  : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ব্যানার */}
-      <div className="h-28 mx-3 mt-3 rounded-xl overflow-hidden bg-linear-to-r from-orange-500 to-red-500">
-        <div className="h-full flex flex-col justify-center px-5">
-          <h2 className="text-white font-bold text-lg">{selectedCategory}</h2>
-          <p className="text-white/80 text-xs">সর্বোচ্চ ৭০% ছাড়ে সেরা পণ্য</p>
-          <button className="mt-1 bg-white/20 text-white text-[10px] px-3 py-0.5 rounded-full w-fit">শপ নাও →</button>
-        </div>
-      </div>
-
-      {/* প্রোডাক্ট গ্রিড */}
-      <div className="p-3">
-        {loading && products.length === 0 ? (
-          <div className="grid grid-cols-2 gap-3">
-            {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
-          </div>
-        ) : products.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-xl">
-            <div className="text-5xl mb-2">🛒</div>
-            <p className="text-gray-400 text-xs">কোন পণ্য নেই</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {products.map((product, idx) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={handleAddToCart}
-                onWishlist={handleWishlist}
-              />
+      {/* মূল কন্টেন্ট – সাইডবার ও গ্রিড */}
+      <div className="flex relative">
+        {/* ডেস্কটপ সাইডবার (md স্ক্রিন থেকে দৃশ্যমান) */}
+        <aside className="hidden md:block w-64 bg-white border-r sticky top-[65px] h-[calc(100vh-65px)] overflow-y-auto p-3">
+          <h2 className="font-bold text-gray-800 mb-3 px-2">সব ক্যাটাগরি</h2>
+          <div className="space-y-1">
+            {CATEGORY_LIST.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => {
+                  setSelectedCategory(cat);
+                  setSidebarOpen(false);
+                }}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
+                  selectedCategory === cat
+                    ? "bg-orange-500 text-white font-semibold"
+                    : "hover:bg-gray-100 text-gray-700"
+                }`}
+              >
+                {cat}
+              </button>
             ))}
           </div>
-        )}
-        
-        {/* ইনফিনিট স্ক্রল ট্রিগার */}
-        <div ref={observerRef} className="flex justify-center py-4">
-          {loading && products.length > 0 && (
-            <Loader2 className="animate-spin text-orange-500" size={18} />
-          )}
-          {!hasMore && products.length > 0 && (
-            <p className="text-[10px] text-gray-400">সব পণ্য দেখানো হয়েছে</p>
-          )}
-        </div>
-      </div>
+        </aside>
 
-      {/* বটম নেভিগেশন */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white flex justify-around items-center py-2.5 border-t shadow-lg z-50">
-        <button onClick={() => router.push("/mall")} className="flex flex-col items-center active:scale-95">
-          <span className="text-xl">🏠</span>
-          <span className="text-[8px] font-semibold text-gray-500">হোম</span>
-        </button>
-        <button onClick={() => router.push("/mall/category")} className="flex flex-col items-center active:scale-95">
-          <span className="text-xl">📂</span>
-          <span className="text-[8px] font-semibold text-gray-500">ক্যাটাগরি</span>
-        </button>
-        <button onClick={() => router.push("/mall/trending")} className="flex flex-col items-center active:scale-95">
-          <span className="text-xl">🔥</span>
-          <span className="text-[8px] font-semibold text-gray-500">ট্রেন্ডিং</span>
-        </button>
-        <button onClick={() => router.push("/mall/cart")} className="flex flex-col items-center active:scale-95 relative">
-          <span className="text-xl">🛒</span>
-          <span className="text-[8px] font-semibold text-gray-500">কার্ট</span>
-          {getCartCount() > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[7px] font-bold rounded-full min-w-3.5 h-3.5 flex items-center justify-center px-0.5">
-              {getCartCount()}
-            </span>
+        {/* মোবাইলের স্লাইড-ইন সাইডবার */}
+        <AnimatePresence>
+          {sidebarOpen && (
+            <>
+              <div
+                className="fixed inset-0 bg-black/50 z-50 md:hidden"
+                onClick={() => setSidebarOpen(false)}
+              />
+              <motion.aside
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "-100%" }}
+                transition={{ type: "spring", damping: 25 }}
+                className="fixed top-0 left-0 bottom-0 w-72 bg-white z-50 shadow-xl overflow-y-auto p-4"
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="font-bold text-lg">ক্যাটাগরি</h2>
+                  <button onClick={() => setSidebarOpen(false)} className="p-1">
+                    <X size={22} />
+                  </button>
+                </div>
+                <div className="space-y-1">
+                  {CATEGORY_LIST.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => {
+                        setSelectedCategory(cat);
+                        setSidebarOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
+                        selectedCategory === cat
+                          ? "bg-orange-500 text-white font-semibold"
+                          : "hover:bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </motion.aside>
+            </>
           )}
-        </button>
-        <button onClick={() => router.push("/me")} className="flex flex-col items-center active:scale-95">
-          <span className="text-xl">👤</span>
-          <span className="text-[8px] font-semibold text-gray-500">আমি</span>
-        </button>
-        <button onClick={() => { if(confirm("মার্কেট প্লেসে ফিরে যাবেন?")) router.push("/"); }} className="flex flex-col items-center active:scale-95">
-          <span className="text-xl">🚪</span>
-          <span className="text-[8px] font-semibold text-red-500">প্রস্থান</span>
-        </button>
-      </nav>
+        </AnimatePresence>
+
+        {/* প্রোডাক্ট গ্রিড এলাকা */}
+        <main className="flex-1 p-3">
+          {/* ব্যানার (ঐচ্ছিক) */}
+          <div className="h-28 mb-3 rounded-xl overflow-hidden bg-gradient-to-r from-orange-500 to-red-500">
+            <div className="h-full flex flex-col justify-center px-5">
+              <h2 className="text-white font-bold text-lg">{selectedCategory}</h2>
+              <p className="text-white/80 text-xs">সর্বোচ্চ ৭০% ছাড়ে সেরা পণ্য</p>
+              <button className="mt-1 bg-white/20 text-white text-[10px] px-3 py-0.5 rounded-full w-fit">শপ নাও →</button>
+            </div>
+          </div>
+
+          {/* প্রোডাক্ট গ্রিড – ২ কলাম */}
+          {loading && products.length === 0 ? (
+            <div className="grid grid-cols-2 gap-3">
+              {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
+            </div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-xl">
+              <div className="text-5xl mb-2">🛒</div>
+              <p className="text-gray-400 text-xs">কোন পণ্য নেই</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onAddToCart={handleAddToCart}
+                  onWishlist={handleWishlist}
+                />
+              ))}
+            </div>
+          )}
+          
+          {/* ইনফিনিট স্ক্রল ট্রিগার */}
+          <div ref={observerRef} className="flex justify-center py-4">
+            {loading && products.length > 0 && (
+              <Loader2 className="animate-spin text-orange-500" size={18} />
+            )}
+            {!hasMore && products.length > 0 && (
+              <p className="text-[10px] text-gray-400">সব পণ্য দেখানো হয়েছে</p>
+            )}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

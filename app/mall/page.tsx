@@ -10,7 +10,8 @@ import { useInfiniteQuery, QueryClient, QueryClientProvider } from "@tanstack/re
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { 
   ShoppingBag, Search, Heart, Loader2, 
-  Zap, Flame, Camera, Menu, Mail, X, Sparkles, Star, Gift
+  Zap, Flame, Camera, Menu, Mail, X, Sparkles, Star, Gift,
+  Home, Grid, TrendingUp, User, LogOut
 } from "lucide-react";
 
 import "swiper/css";
@@ -19,7 +20,7 @@ import "swiper/css/effect-fade";
 
 const queryClient = new QueryClient();
 
-// ============ ডাটা ============
+// ============ ডাটা (পূর্বের মতই, স্থানীয়ভাবে রাখা হয়েছে) ============
 const BANNER_SLIDES = [
   { id: 1, title: "মেগা সেল", discount: "৭০% ছাড়", color: "from-purple-600 to-pink-600" },
   { id: 2, title: "ফ্ল্যাশ ডিল", discount: "৬০% ছাড়", color: "from-orange-600 to-red-600" },
@@ -62,7 +63,6 @@ const CATEGORIES = [
 
 const TABS = ["সব", "মহিলা", "পুরুষ", "কিডস", "ইলেকট্রনিক্স", "ফ্যাশন"];
 
-// ✅ ফ্ল্যাশ সেল ডাটা (এখানে ভ্যালিড ডাটা দিন)
 const FLASH_SALE = [
   { id: 1, price: 674, original: 1348, discount: 50 },
   { id: 2, price: 378, original: 756, discount: 50 },
@@ -78,7 +78,6 @@ const FLASH_SALE = [
   { id: 12, price: 799, original: 1598, discount: 50 },
 ];
 
-// ✅ অফার ডাটা (এখানে ভ্যালিড ডাটা দিন)
 const OFFERS = [
   { id: 1, title: "ফ্যাশন সেল", discount: "৫০%", color: "from-pink-500 to-rose-500" },
   { id: 2, title: "ইলেকট্রনিক্স", discount: "৪০%", color: "from-blue-500 to-cyan-500" },
@@ -117,8 +116,9 @@ const productData: Record<string, string[]> = {
   "স্পোর্টস": ["Football", "Cricket Bat", "Gym Gloves", "Protein", "Sports Shoes", "T-shirt", "Short", "Water Bottle"],
 };
 
+// সিমুলেটেড API (স্থানীয় ডাটা)
 const fetchProductsAPI = async ({ pageParam = 1, category = "সব", search = "" }) => {
-  await new Promise(r => setTimeout(r, 400));
+  await new Promise(r => setTimeout(r, 300)); // কম সময়, ল্যাগ কম
   let items = productData[category] || productData["সব"];
   if (search) items = items.filter(i => i.toLowerCase().includes(search.toLowerCase()));
   const products = Array(20).fill(0).map((_, i) => ({
@@ -133,10 +133,16 @@ const fetchProductsAPI = async ({ pageParam = 1, category = "সব", search = "
   return { products, nextPage: pageParam + 1, hasNextPage: pageParam < 100 };
 };
 
+// ============ 3D স্টাইল্ড প্রোডাক্ট কার্ড ============
 const ProductCard = React.memo(({ product, onAddToCart, onWishlist }: any) => {
   const router = useRouter();
   return (
-    <div onClick={() => router.push(`/mall/product/${product.id}`)} className="bg-white rounded-xl overflow-hidden shadow-sm active:scale-95 transition-all duration-150 cursor-pointer">
+    <motion.div
+      whileHover={{ y: -4, scale: 1.02 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      onClick={() => router.push(`/mall/product/${product.id}`)}
+      className="bg-white rounded-xl overflow-hidden shadow-sm cursor-pointer transform-gpu will-change-transform"
+    >
       <div className="relative aspect-[3/4] bg-gray-200 overflow-hidden">
         <img 
           src={product.image} 
@@ -146,7 +152,7 @@ const ProductCard = React.memo(({ product, onAddToCart, onWishlist }: any) => {
           onLoad={(e) => { e.currentTarget.style.opacity = "1"; }}
           style={{ opacity: 0 }} 
         />
-        <button onClick={(e) => { e.stopPropagation(); onWishlist(product); }} className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm p-1.5 rounded-full">
+        <button onClick={(e) => { e.stopPropagation(); onWishlist(product); }} className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm p-1.5 rounded-full shadow-md">
           <Heart size={14} className="text-gray-600" />
         </button>
         <div className="absolute bottom-2 left-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">-{Math.floor(Math.random() * 40 + 20)}%</div>
@@ -156,11 +162,12 @@ const ProductCard = React.memo(({ product, onAddToCart, onWishlist }: any) => {
         <p className="font-bold text-black text-sm">৳{product.price.toLocaleString()}</p>
         <button onClick={(e) => { e.stopPropagation(); onAddToCart(product); }} className="mt-1.5 w-full bg-black text-white text-[10px] py-1.5 rounded-lg font-semibold active:scale-95 transition-all">কার্টে যোগ করুন</button>
       </div>
-    </div>
+    </motion.div>
   );
 });
 ProductCard.displayName = "ProductCard";
 
+// ============ মূল কম্পোনেন্ট ============
 function TuniMallContent() {
   const router = useRouter();
   const { addToCart, getCartCount } = useCart();
@@ -168,9 +175,7 @@ function TuniMallContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [wishlistMsg, setWishlistMsg] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -196,9 +201,10 @@ function TuniMallContent() {
     count: Math.ceil(allProducts.length / columnCount),
     getScrollElement: () => scrollContainerRef.current,
     estimateSize: () => 320,
-    overscan: 5,
+    overscan: 3, // কম overscan দ্রুত স্ক্রল
   });
 
+  // প্রিফেচ পরবর্তী পৃষ্ঠা
   useEffect(() => {
     const lastRowIndex = rowVirtualizer.getVirtualItems().at(-1)?.index;
     if (lastRowIndex !== undefined && lastRowIndex >= Math.ceil(allProducts.length / columnCount) - 2 && hasNextPage && !isFetchingNextPage) {
@@ -213,13 +219,13 @@ function TuniMallContent() {
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     setSearchQuery("");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCategoryClick = (category: string) => {
     const mappedTab = categoryToTab[category] || "সব";
     setActiveTab(mappedTab);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleWishlist = (product: any) => {
@@ -241,16 +247,16 @@ function TuniMallContent() {
       if (value.trim()) {
         setIsSearching(true);
         refetch();
-        setTimeout(() => setIsSearching(false), 800);
+        setTimeout(() => setIsSearching(false), 600);
       }
-    }, 500);
+    }, 400);
   };
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
       setIsSearching(true);
       refetch();
-      setTimeout(() => setIsSearching(false), 800);
+      setTimeout(() => setIsSearching(false), 600);
     }
   };
 
@@ -267,12 +273,14 @@ function TuniMallContent() {
     return () => clearInterval(timer);
   }, []);
 
+ 
+
   return (
-    <div className="bg-gray-100 min-h-screen pb-16 overflow-x-hidden selection:bg-orange-100">
+    <div className="bg-gray-100 min-h-screen pb-20 overflow-x-hidden selection:bg-orange-100">
       <AnimatePresence>
         {wishlistMsg && (
           <motion.div initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -50 }}
-            className="fixed top-14 left-1/2 -translate-x-1/2 bg-black/80 text-white px-3 py-1.5 rounded-full text-[11px] z-50 whitespace-nowrap">
+            className="fixed top-16 left-1/2 -translate-x-1/2 bg-black/80 text-white px-3 py-1.5 rounded-full text-[11px] z-50 whitespace-nowrap backdrop-blur-md">
             {wishlistMsg}
           </motion.div>
         )}
@@ -287,38 +295,47 @@ function TuniMallContent() {
         )}
       </AnimatePresence>
 
-      <header className="sticky top-0 z-40 bg-white shadow-sm">
+      {/* আধুনিক হেডার */}
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md shadow-sm">
         <div className="px-3 py-2 flex items-center gap-2">
-          <button className="p-1"><Menu size={20} /></button>
-          <button className="p-1"><Mail size={20} /></button>
-          <div className="flex-1 flex items-center bg-gray-100 rounded-full px-2 py-1">
+          <motion.button whileTap={{ scale: 0.9 }} className="p-1 rounded-full bg-gray-100"><Menu size={20} /></motion.button>
+          <motion.button whileTap={{ scale: 0.9 }} className="p-1 rounded-full bg-gray-100"><Mail size={20} /></motion.button>
+          <div className="flex-1 flex items-center bg-gray-100 rounded-full px-2 py-1 shadow-inner">
             <input placeholder="১০ কোটি+ পণ্য সার্চ করুন..." value={searchQuery} onChange={handleSearchChange} onKeyDown={(e) => e.key === "Enter" && handleSearch()} className="flex-1 bg-transparent text-xs outline-none text-black" />
-            <button onClick={handleSearch} className="bg-black text-white p-0.5 rounded-full ml-1"><Search size={12} /></button>
+            <motion.button whileTap={{ scale: 0.9 }} onClick={handleSearch} className="bg-black text-white p-0.5 rounded-full ml-1"><Search size={12} /></motion.button>
           </div>
-          <button className="p-1"><Heart size={20} className="text-gray-600" /></button>
-          <button onClick={() => router.push("/mall/cart")} className="relative p-1">
+          <motion.button whileTap={{ scale: 0.9 }} className="p-1 rounded-full bg-gray-100"><Heart size={20} className="text-gray-600" /></motion.button>
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => router.push("/mall/cart")} className="relative p-1 rounded-full bg-gray-100">
             <ShoppingBag size={20} className="text-gray-600" />
             {getCartCount() > 0 && <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center">{getCartCount()}</span>}
-          </button>
+          </motion.button>
         </div>
-        <div className="flex gap-1 overflow-x-auto px-3 py-1.5 border-t no-scrollbar bg-white">
+        <div className="flex gap-1 overflow-x-auto px-3 py-1.5 border-t no-scrollbar bg-white/80">
           {TABS.map(tab => (
-            <button key={tab} onClick={() => handleTabChange(tab)} className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-all ${activeTab === tab ? "bg-black text-white font-semibold" : "text-gray-500 bg-gray-100"}`}>
+            <motion.button
+              key={tab}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => handleTabChange(tab)}
+              className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-all ${
+                activeTab === tab ? "bg-black text-white font-semibold shadow-md" : "text-gray-500 bg-gray-100"
+              }`}
+            >
               {tab}
-            </button>
+            </motion.button>
           ))}
         </div>
       </header>
 
-      <div className="h-44 mx-2 mt-2 rounded-xl overflow-hidden bg-gray-200">
+      {/* ব্যানার সোয়াইপার */}
+      <div className="h-44 mx-2 mt-2 rounded-xl overflow-hidden shadow-md">
         <Swiper modules={[Autoplay, Pagination, EffectFade]} autoplay={{ delay: 3000, disableOnInteraction: false }} pagination={{ clickable: true, bulletClass: "swiper-pagination-bullet !bg-white" }} effect="fade" loop className="h-full">
           {BANNER_SLIDES.map((slide) => (
             <SwiperSlide key={slide.id}>
               <div className={`relative h-full bg-gradient-to-r ${slide.color}`}>
                 <div className="absolute inset-0 flex flex-col justify-center px-5">
-                  <h2 className="text-white text-xl font-black">{slide.title}</h2>
+                  <h2 className="text-white text-xl font-black drop-shadow">{slide.title}</h2>
                   <p className="text-yellow-300 text-sm font-bold">{slide.discount}</p>
-                  <button onClick={() => router.push(`/mall/product/banner-${slide.id}`)} className="mt-1.5 bg-white text-black px-4 py-0.5 text-[10px] font-bold rounded-full w-fit">এখনই কিনুন →</button>
+                  <button onClick={() => router.push(`/mall/product/banner-${slide.id}`)} className="mt-1.5 bg-white text-black px-4 py-0.5 text-[10px] font-bold rounded-full w-fit shadow">এখনই কিনুন →</button>
                 </div>
               </div>
             </SwiperSlide>
@@ -326,54 +343,73 @@ function TuniMallContent() {
         </Swiper>
       </div>
 
-      <div className="bg-white mt-2 py-4 px-2 rounded-t-2xl">
+      {/* ক্যাটাগরি গ্রিড - 3D হোভার ইফেক্ট */}
+      <div className="bg-white mt-2 py-4 px-2 rounded-t-2xl shadow-sm">
         <div className="flex justify-between items-center mb-3 px-1"><span className="font-bold text-gray-700 text-sm">ক্যাটাগরি</span><button className="text-[10px] text-orange-500">সব দেখুন →</button></div>
         <div className="grid grid-cols-5 gap-y-4 gap-x-2">
           {CATEGORIES.map((cat, i) => (
-            <div key={i} onClick={() => handleCategoryClick(cat.name)} className="flex flex-col items-center cursor-pointer active:scale-95 transition-all">
-              <div className="w-14 h-14 min-w-[56px] min-h-[56px] rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-2xl shadow-sm">
+            <motion.div
+              key={i}
+              whileHover={{ y: -4, scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handleCategoryClick(cat.name)}
+              className="flex flex-col items-center cursor-pointer transform-gpu will-change-transform"
+            >
+              <div className="w-14 h-14 min-w-[56px] min-h-[56px] rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-2xl shadow-md transition-all duration-200 hover:shadow-lg">
                 {cat.icon}
               </div>
               <span className="text-[10px] mt-1.5 font-medium text-gray-700 text-center">{cat.name}</span>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
 
-      {/* ✅ ফ্ল্যাশ সেল সেকশন (লাল দাগ থাকবে না) */}
-      <div className="mt-2 bg-gradient-to-r from-red-50 to-orange-50 px-3 py-3 mx-2 rounded-xl">
+      {/* ফ্ল্যাশ সেল - মডার্ন */}
+      <div className="mt-2 bg-gradient-to-r from-red-50 to-orange-50 px-3 py-3 mx-2 rounded-xl shadow">
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-1.5"><Zap size={18} className="text-red-500 animate-pulse" fill="currentColor" /><span className="font-bold text-red-600 text-sm">ফ্ল্যাশ সেল</span></div>
-          <div className="text-[10px] font-bold bg-black text-white px-2.5 py-1 rounded-full">{String(timeLeft.hours).padStart(2,'0')}:{String(timeLeft.minutes).padStart(2,'0')}:{String(timeLeft.seconds).padStart(2,'0')}</div>
+          <div className="text-[10px] font-bold bg-black text-white px-2.5 py-1 rounded-full shadow">{String(timeLeft.hours).padStart(2,'0')}:{String(timeLeft.minutes).padStart(2,'0')}:{String(timeLeft.seconds).padStart(2,'0')}</div>
         </div>
         <div className="grid grid-cols-4 gap-2">
           {FLASH_SALE.map((item) => (
-            <div key={item.id} onClick={() => router.push(`/mall/product/flash-${item.id}`)} className="bg-white rounded-xl p-1 shadow-sm cursor-pointer active:scale-95 transition">
+            <motion.div
+              key={item.id}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => router.push(`/mall/product/flash-${item.id}`)}
+              className="bg-white rounded-xl p-1 shadow-md cursor-pointer transform-gpu"
+            >
               <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center text-3xl">
                 <span className="shrink-0">⚡</span>
                 <div className="absolute top-0 left-0 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-br">-{item.discount}%</div>
               </div>
               <div className="text-center mt-1"><p className="text-red-600 font-bold text-xs">৳{item.price}</p><p className="text-gray-400 text-[9px] line-through">৳{item.original}</p></div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
 
-      {/* ✅ অফার গ্রিড সেকশন (লাল দাগ থাকবে না) */}
+      {/* অফার গ্রিড */}
       <div className="mt-2 px-2">
         <div className="flex justify-between items-center mb-2 px-1"><div className="flex items-center gap-1.5"><span className="text-sm">🎁</span><span className="font-bold text-gray-700 text-sm">হট অফার</span></div><button className="text-[10px] text-orange-500">সব দেখুন →</button></div>
         <div className="grid grid-cols-4 gap-2">
           {OFFERS.map((offer) => (
-            <div key={offer.id} onClick={() => router.push(`/mall/product/offer-${offer.id}`)} className={`bg-gradient-to-r ${offer.color} rounded-xl p-2 shadow-lg cursor-pointer active:scale-95 transition-all`}>
+            <motion.div
+              key={offer.id}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => router.push(`/mall/product/offer-${offer.id}`)}
+              className={`bg-gradient-to-r ${offer.color} rounded-xl p-2 shadow-lg cursor-pointer transform-gpu`}
+            >
               <p className="text-white text-[8px] opacity-80">অফার</p>
               <p className="text-white text-[10px] font-bold leading-tight">{offer.title}</p>
               <p className="text-yellow-200 text-[12px] font-black">{offer.discount}</p>
               <button className="mt-1 bg-white/20 text-white text-[7px] px-1.5 py-0.5 rounded-full">কিনুন →</button>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
 
+      {/* প্রস্তাবিত পণ্য ভার্চুয়াল স্ক্রল */}
       <div className="px-2 mt-2">
         <div className="flex justify-between items-center mb-2 px-1"><h2 className="font-bold flex items-center gap-1 text-gray-800 text-sm"><Flame size={16} className="text-orange-500" />প্রস্তাবিত পণ্য</h2><button className="text-[10px] text-orange-500">সব দেখুন →</button></div>
         
@@ -382,7 +418,7 @@ function TuniMallContent() {
         ) : allProducts.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-xl"><div className="text-5xl mb-2">🛒</div><p className="text-gray-400 text-xs">কোন পণ্য নেই</p><button onClick={() => refetch()} className="mt-3 text-orange-500 text-xs font-semibold">আবার চেষ্টা করুন →</button></div>
         ) : (
-          <div ref={scrollContainerRef} className="h-[600px] overflow-y-auto">
+          <div ref={scrollContainerRef} className="h-[600px] overflow-y-auto rounded-xl">
             <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
               {rowVirtualizer.getVirtualItems().map((virtualRow) => {
                 const rowItems = allProducts.slice(virtualRow.index * columnCount, (virtualRow.index + 1) * columnCount);
@@ -413,24 +449,6 @@ function TuniMallContent() {
         )}
       </div>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-white flex justify-around items-center py-2.5 border-t shadow-lg z-50">
-        <button onClick={() => router.push("/mall")} className="flex flex-col items-center active:scale-95 transition-all"><span className="text-xl">🏠</span><span className="text-[8px] font-semibold text-gray-500">HOME</span></button>
-        <button onClick={() => router.push("/mall/category")} className="flex flex-col items-center active:scale-95 transition-all"><span className="text-xl">📂</span><span className="text-[8px] font-semibold text-gray-500">CATEGORY</span></button>
-        <button onClick={() => router.push("/mall/trending")} className="flex flex-col items-center active:scale-95 transition-all"><span className="text-xl">🔥</span><span className="text-[8px] font-semibold text-gray-500">TRENDING</span></button>
-        <button onClick={() => router.push("/mall/cart")} className="flex flex-col items-center active:scale-95 transition-all relative"><span className="text-xl">🛒</span><span className="text-[8px] font-semibold text-gray-500">CART</span>{getCartCount() > 0 && <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[7px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5">{getCartCount()}</span>}</button>
-        <button onClick={() => router.push("/mall/me")} className="flex flex-col items-center active:scale-95 transition-all"><span className="text-xl">👤</span><span className="text-[8px] font-semibold text-gray-500">ME</span></button>
-        <button onClick={() => { if(confirm("মার্কেট প্লেসে ফিরে যাবেন?")) router.push("/"); }} className="flex flex-col items-center active:scale-95 transition-all"><span className="text-xl">🚪</span><span className="text-[8px] font-semibold text-red-500">MALL EXIT</span></button>
-      </nav>
-
-      {showCamera && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center" onClick={() => setShowCamera(false)}>
-          <div className="bg-white rounded-xl p-5 m-4 max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-3"><h3 className="font-bold">📸 এআই ক্যামেরা</h3><button onClick={() => setShowCamera(false)}><X size={18} /></button></div>
-            <div className="bg-gray-100 h-36 rounded-xl flex flex-col items-center justify-center"><Camera size={36} className="text-gray-400" /><p className="text-xs text-gray-500 mt-2">ছবি তুলে সার্চ করুন</p></div>
-            <button className="mt-4 w-full bg-black text-white py-1.5 rounded-full text-xs font-semibold">ক্যামেরা খুলুন</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
