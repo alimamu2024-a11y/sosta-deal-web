@@ -1,4 +1,4 @@
-// proxy.ts
+// proxy.ts (রুট ফোল্ডারে)
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
@@ -29,20 +29,12 @@ export async function proxy(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // পাবলিক রাউট (লগইন ছাড়া যেসব পেজ দেখা যাবে)
-  const publicRoutes = ['/login', '/auth/callback', '/', '/grammer-haat', '/mall', '/marketplace', '/social']
-  const isPublicRoute = publicRoutes.some(route => req.nextUrl.pathname === route || req.nextUrl.pathname.startsWith(route + '/'))
-
-  // লগইন করা ইউজার লগইন পেজে গেলে হোমপেজে পাঠান
+  // শুধু লগইন পেজ চেক (লগইন করা ইউজার লগইন পেজে গেলে হোমে পাঠান)
   if (req.nextUrl.pathname === '/login' && user) {
     return NextResponse.redirect(new URL('/', req.url))
   }
 
-  // পাবলিক রাউট না হলে এবং ইউজার লগইন না থাকলে লগইন পেজে পাঠান
-  if (!isPublicRoute && !user) {
-    return NextResponse.redirect(new URL('/login', req.url))
-  }
-
+  // সব পেজ পাবলিক – কোনো লগইন চেক নেই
   return response
 }
 

@@ -1,9 +1,10 @@
 // helpers/chat.ts
 export type SectionType = 'marketplace' | 'social' | 'gramer_haat' | 'tuni_mall' | 'private';
+// helpers/chat.ts
 
-export function getRoomId(section: SectionType, itemId: string | number): string {
-  return `${section}_${itemId}`;
-}
+export const getRoomId = (platform: string, id: string): string => {
+  return `${platform}_${id}`;
+};
 
 // প্রাইভেট চ্যাটের জন্য ইউনিক রুম আইডি (দুই ইউজারের আইডি সাজিয়ে)
 export function getPrivateRoomId(userId1: string, userId2: string): string {

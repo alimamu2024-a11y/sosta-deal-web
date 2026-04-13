@@ -1,3 +1,4 @@
+// app/mall/category/page.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
@@ -67,7 +68,7 @@ const fetchProductsByCategory = async (category: string, page: number): Promise<
   }));
 };
 
-// প্রোডাক্ট কার্ড
+// প্রোডাক্ট কার্ড কম্পোনেন্ট
 const ProductCard = ({ product, onAddToCart, onWishlist }: any) => {
   const router = useRouter();
   
@@ -193,8 +194,9 @@ export default function CategoryPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       
+      {/* টোস্ট মেসেজ */}
       {wishlistMsg && (
-        <div className="fixed top-14 left-1/2 -translate-x-1/2 bg-black/80 text-white px-3 py-1.5 rounded-full text-[11px] z-50 whitespace-nowrap">
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 bg-black/80 text-white px-3 py-1.5 rounded-full text-[11px] z-50">
           {wishlistMsg}
         </div>
       )}
@@ -220,9 +222,9 @@ export default function CategoryPage() {
         </div>
       </header>
 
-      {/* মূল লেআউট: সাইডবার + গ্রিড */}
+      {/* Shein স্টাইল সাইডবার + গ্রিড */}
       <div className="flex relative">
-        {/* ডেস্কটপ সাইডবার (md স্ক্রিন থেকে দেখাবে) */}
+        {/* ডেস্কটপ সাইডবার (সবসময় খোলা) */}
         <aside className="hidden md:block w-64 bg-white border-r sticky top-[65px] h-[calc(100vh-65px)] overflow-y-auto p-3">
           <h2 className="font-bold text-gray-800 mb-3 px-2">সব ক্যাটাগরি</h2>
           <div className="space-y-1">
@@ -242,7 +244,7 @@ export default function CategoryPage() {
           </div>
         </aside>
 
-        {/* মোবাইলে স্লাইড-ইন সাইডবার */}
+        {/* মোবাইলের স্লাইড-ইন সাইডবার */}
         <AnimatePresence>
           {sidebarOpen && (
             <>
@@ -286,7 +288,7 @@ export default function CategoryPage() {
           )}
         </AnimatePresence>
 
-        {/* প্রোডাক্ট গ্রিড */}
+        {/* প্রোডাক্ট গ্রিড এলাকা */}
         <main className="flex-1 p-3">
           {/* ব্যানার */}
           <div className="h-28 mb-3 rounded-xl overflow-hidden bg-gradient-to-r from-orange-500 to-red-500">

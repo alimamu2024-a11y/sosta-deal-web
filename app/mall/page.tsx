@@ -20,7 +20,7 @@ import "swiper/css/effect-fade";
 
 const queryClient = new QueryClient();
 
-// ============ ডাটা (পূর্বের মতই, স্থানীয়ভাবে রাখা হয়েছে) ============
+// ============ ডাটা (পূর্বের মতই) ============
 const BANNER_SLIDES = [
   { id: 1, title: "মেগা সেল", discount: "৭০% ছাড়", color: "from-purple-600 to-pink-600" },
   { id: 2, title: "ফ্ল্যাশ ডিল", discount: "৬০% ছাড়", color: "from-orange-600 to-red-600" },
@@ -116,9 +116,8 @@ const productData: Record<string, string[]> = {
   "স্পোর্টস": ["Football", "Cricket Bat", "Gym Gloves", "Protein", "Sports Shoes", "T-shirt", "Short", "Water Bottle"],
 };
 
-// সিমুলেটেড API (স্থানীয় ডাটা)
 const fetchProductsAPI = async ({ pageParam = 1, category = "সব", search = "" }) => {
-  await new Promise(r => setTimeout(r, 300)); // কম সময়, ল্যাগ কম
+  await new Promise(r => setTimeout(r, 300));
   let items = productData[category] || productData["সব"];
   if (search) items = items.filter(i => i.toLowerCase().includes(search.toLowerCase()));
   const products = Array(20).fill(0).map((_, i) => ({
@@ -201,10 +200,9 @@ function TuniMallContent() {
     count: Math.ceil(allProducts.length / columnCount),
     getScrollElement: () => scrollContainerRef.current,
     estimateSize: () => 320,
-    overscan: 3, // কম overscan দ্রুত স্ক্রল
+    overscan: 3,
   });
 
-  // প্রিফেচ পরবর্তী পৃষ্ঠা
   useEffect(() => {
     const lastRowIndex = rowVirtualizer.getVirtualItems().at(-1)?.index;
     if (lastRowIndex !== undefined && lastRowIndex >= Math.ceil(allProducts.length / columnCount) - 2 && hasNextPage && !isFetchingNextPage) {
@@ -273,8 +271,6 @@ function TuniMallContent() {
     return () => clearInterval(timer);
   }, []);
 
- 
-
   return (
     <div className="bg-gray-100 min-h-screen pb-20 overflow-x-hidden selection:bg-orange-100">
       <AnimatePresence>
@@ -295,34 +291,79 @@ function TuniMallContent() {
         )}
       </AnimatePresence>
 
-      {/* আধুনিক হেডার */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md shadow-sm">
-        <div className="px-3 py-2 flex items-center gap-2">
-          <motion.button whileTap={{ scale: 0.9 }} className="p-1 rounded-full bg-gray-100"><Menu size={20} /></motion.button>
-          <motion.button whileTap={{ scale: 0.9 }} className="p-1 rounded-full bg-gray-100"><Mail size={20} /></motion.button>
-          <div className="flex-1 flex items-center bg-gray-100 rounded-full px-2 py-1 shadow-inner">
-            <input placeholder="১০ কোটি+ পণ্য সার্চ করুন..." value={searchQuery} onChange={handleSearchChange} onKeyDown={(e) => e.key === "Enter" && handleSearch()} className="flex-1 bg-transparent text-xs outline-none text-black" />
-            <motion.button whileTap={{ scale: 0.9 }} onClick={handleSearch} className="bg-black text-white p-0.5 rounded-full ml-1"><Search size={12} /></motion.button>
+      {/* ===================== আল্ট্রা মডার্ন হেডার ===================== */}
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100/50 shadow-sm">
+        <div className="px-4 py-3">
+          {/* প্রথম সারি - লোগো ও আইকন */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-1">
+              <span className="text-2xl font-black tracking-tighter bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
+                SOSTA
+              </span>
+              <span className="text-2xl font-black text-gray-800">DEAL</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <motion.button whileTap={{ scale: 0.9 }} className="relative">
+                <Heart size={22} className="text-gray-600" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+              </motion.button>
+              <motion.button whileTap={{ scale: 0.9 }} onClick={() => router.push("/mall/cart")} className="relative">
+                <ShoppingBag size={22} className="text-gray-600" />
+                {getCartCount() > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-md">
+                    {getCartCount()}
+                  </span>
+                )}
+              </motion.button>
+            </div>
           </div>
-          <motion.button whileTap={{ scale: 0.9 }} className="p-1 rounded-full bg-gray-100"><Heart size={20} className="text-gray-600" /></motion.button>
-          <motion.button whileTap={{ scale: 0.9 }} onClick={() => router.push("/mall/cart")} className="relative p-1 rounded-full bg-gray-100">
-            <ShoppingBag size={20} className="text-gray-600" />
-            {getCartCount() > 0 && <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center">{getCartCount()}</span>}
-          </motion.button>
-        </div>
-        <div className="flex gap-1 overflow-x-auto px-3 py-1.5 border-t no-scrollbar bg-white/80">
-          {TABS.map(tab => (
-            <motion.button
-              key={tab}
-              whileTap={{ scale: 0.96 }}
-              onClick={() => handleTabChange(tab)}
-              className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-all ${
-                activeTab === tab ? "bg-black text-white font-semibold shadow-md" : "text-gray-500 bg-gray-100"
-              }`}
-            >
-              {tab}
-            </motion.button>
-          ))}
+
+          {/* সার্চ বার - গ্লাসমরফিক */}
+          <div className="relative mb-3">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-2xl blur-xl opacity-50" />
+            <div className="relative flex items-center bg-white/80 backdrop-blur-md rounded-2xl px-4 py-2.5 border border-gray-100/50 shadow-lg">
+              <Search size={18} className="text-gray-400 mr-2" />
+              <input
+                placeholder="১০ কোটি+ পণ্য সার্চ করুন..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                className="flex-1 bg-transparent text-sm outline-none text-gray-700 placeholder:text-gray-400"
+              />
+              <motion.button 
+                whileTap={{ scale: 0.95 }}
+                onClick={handleSearch}
+                className="ml-2 px-4 py-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-semibold rounded-xl shadow-md"
+              >
+                Search
+              </motion.button>
+            </div>
+          </div>
+
+          {/* ট্যাব - অ্যানিমেটেড আন্ডারলাইন */}
+          <div className="flex gap-1 overflow-x-auto no-scrollbar pb-1">
+            {TABS.map((tab) => (
+              <motion.button
+                key={tab}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => handleTabChange(tab)}
+                className={`relative px-4 py-1.5 text-sm font-medium rounded-full transition-all whitespace-nowrap ${
+                  activeTab === tab 
+                    ? "text-white" 
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {activeTab === tab && (
+                  <motion.span
+                    layoutId="activeTab"
+                    className="absolute inset-0 bg-gradient-to-r from-orange-500 to-red-500 rounded-full -z-10 shadow-md"
+                    transition={{ type: "spring", duration: 0.5 }}
+                  />
+                )}
+                {tab}
+              </motion.button>
+            ))}
+          </div>
         </div>
       </header>
 

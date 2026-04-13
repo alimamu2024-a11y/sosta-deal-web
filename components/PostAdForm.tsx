@@ -1,280 +1,410 @@
+// components/PostAdForm.tsx
 "use client";
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  X, Video, Trash2, CheckCircle, MapPin, 
-  ChevronDown, Camera, Info, List, AlertTriangle, Navigation,
-  Mic, Square, Volume2, CheckCircle2
+import { useState, useRef, useEffect } from 'react';
+import { 
+  X, Camera, Mic, Trash2, CheckCircle, AlertTriangle, 
+  ChevronDown, Info, Image as ImageIcon, FileVideo, 
+  Volume2, Plus, MapPin, Phone, DollarSign, Tag, 
+  Clock, Shield, Sparkles, Upload, Loader2, Eye, 
+  ShoppingBag, Heart, MessageCircle, Share2 
 } from 'lucide-react';
+import { compressImage, compressAudio, compressVideo } from '../lib/mediaOptimizer';
 
-const PostAdForm = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
-  const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [showCategoryDrawer, setShowCategoryDrawer] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("ক্যাটাগরি নির্বাচন করুন");
-  const [location, setLocation] = useState("");
-  const [isCompressing, setIsCompressing] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
+interface MediaItem {
+  url: string;
+  file: File;
+}
 
-  // --- ভয়েস রেকর্ডিং লজিক ---
+export default function PostAdForm({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [video, setVideo] = useState<MediaItem | null>(null);
+  const [audio, setAudio] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [audioURL, setAudioURL] = useState<string | null>(null);
+  const [terms, setTerms] = useState(false);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('');
+  const [phone, setPhone] = useState('');
+  const [location, setLocation] = useState('');
+  const [category, setCategory] = useState('');
+  const [condition, setCondition] = useState('');
+  const [deliveryOption, setDeliveryOption] = useState('');
+  const [negotiable, setNegotiable] = useState(false);
+  const [showCategory, setShowCategory] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+
+  const categories = ['মোবাইল', 'ইলেকট্রনিক্স', 'ফ্যাশন', 'গাড়ি', 'জমি', 'চাকরি', 'গ্রামের হাট', 'পোষ্য', 'হোম এপ্লায়েন্সেস', 'বই', 'খেলনা', 'অন্যান্য'];
+  const conditions = ['নতুন (বক্স খোলা)', 'নতুন (সিল করা)', 'ব্যবহৃত (ভালো)', 'ব্যবহৃত (মোটামুটি)', 'পুরাতন'];
+  const deliveryOptions = ['হোম ডেলিভারি', 'হাতে হাতে', 'কুরিয়ার সার্ভিস', 'যেকোনো'];
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (mediaItems.length + files.length > 6) {
+      alert('সর্বোচ্চ ৬টি ছবি আপলোড করতে পারবেন');
+      return;
+    }
+    
+    setUploadProgress(0);
+    const interval = setInterval(() => {
+      setUploadProgress(prev => Math.min(prev + 20, 90));
+    }, 100);
+    
+    const compressedItems: MediaItem[] = [];
+    for (const file of files) {
+      const compressedUrl = await compressImage(file);
+      compressedItems.push({ url: compressedUrl, file });
+    }
+    
+    setMediaItems([...mediaItems, ...compressedItems]);
+    
+    clearInterval(interval);
+    setUploadProgress(100);
+    setTimeout(() => setUploadProgress(0), 1000);
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadProgress(0);
+      const interval = setInterval(() => setUploadProgress(prev => Math.min(prev + 10, 90)), 200);
+      const compressedUrl = await compressVideo(file);
+      setVideo({ url: compressedUrl, file });
+      clearInterval(interval);
+      setUploadProgress(100);
+      setTimeout(() => setUploadProgress(0), 1000);
+    }
+  };
 
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
       const chunks: Blob[] = [];
-      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
-        setAudioURL(URL.createObjectURL(blob));
+      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        const compressed = await compressAudio(blob);
+        setAudio(URL.createObjectURL(compressed));
+        stream.getTracks().forEach(track => track.stop());
       };
-      mediaRecorder.start();
+      recorder.start();
       setIsRecording(true);
+      setTimeout(() => {
+        if (recorder.state === 'recording') {
+          recorder.stop();
+          setIsRecording(false);
+        }
+      }, 30000);
     } catch (err) {
-      alert("মাইক্রোফোন পারমিশন দিন!");
+      alert('মাইক্রোফোন পারমিশন প্রয়োজন');
     }
   };
 
   const stopRecording = () => {
-    mediaRecorderRef.current?.stop();
-    setIsRecording(false);
-  };
-  // --- ভয়েস রেকর্ডিং লজিক শেষ ---
-
-  // 🔥 ইমেজ অটোমেটিক ২০০ কেবি করার লজিক
-  const compressImage = (file: File): Promise<string> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (e) => {
-        const img = new Image();
-        img.src = e.target?.result as string;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 800; 
-          canvas.width = MAX_WIDTH;
-          canvas.height = img.height * (MAX_WIDTH / img.width);
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-          // কোয়ালিটি ০.৪ দিলে ৫ এমবি ফাইল ২০০ কেবি-র নিচে চলে আসে
-          resolve(canvas.toDataURL('image/jpeg', 0.4));
-        };
-      };
-    });
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (selectedImages.length + files.length > 6) return alert("সর্বোচ্চ ৬টি ছবি!");
-    setIsCompressing(true);
-    const results = await Promise.all(files.map(file => compressImage(file)));
-    setSelectedImages(prev => [...prev, ...results]);
-    setIsCompressing(false);
-  };
-
-  // 🔥 ভিডিও ১০ সেকেন্ড লিমিট লজিক
-  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const video = document.createElement('video');
-      video.preload = 'metadata';
-      video.onloadedmetadata = () => {
-        if (video.duration > 10.5) { // ১০ সেকেন্ডের বেশি হলে
-          alert("দুঃখিত! ভিডিওটি অবশ্যই ১০ সেকেন্ডের কম হতে হবে।");
-          e.target.value = ""; 
-          return;
-        }
-        setVideoPreview(URL.createObjectURL(file));
-      };
-      video.src = URL.createObjectURL(file);
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
     }
   };
 
-  const handlePublish = () => {
-    setShowSuccess(true);
+  const handlePublish = async () => {
+    if (!title || !price || !phone || !location || !category || !condition || !terms) {
+      alert('সব তথ্য পূরণ করুন (* চিহ্নিত ফিল্ড আবশ্যিক)');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setUploadProgress(0);
+    const interval = setInterval(() => setUploadProgress(prev => Math.min(prev + 5, 95)), 100);
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    clearInterval(interval);
+    setUploadProgress(100);
     setTimeout(() => {
-      setShowSuccess(false);
+      setIsSubmitting(false);
+      alert('✅ আপনার বিজ্ঞাপন সফলভাবে প্রকাশ করা হয়েছে!');
       onClose();
-    }, 3000); // ৩ সেকেন্ড পর বন্ধ হবে
+      setMediaItems([]);
+      setVideo(null);
+      setAudio(null);
+      setTitle('');
+      setDescription('');
+      setPrice('');
+      setPhone('');
+      setLocation('');
+      setCategory('');
+      setCondition('');
+      setDeliveryOption('');
+      setNegotiable(false);
+      setTerms(false);
+      setUploadProgress(0);
+    }, 500);
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-[3000] flex items-end justify-center backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full bg-white rounded-t-[45px] p-6 h-[95%] overflow-y-auto no-scrollbar relative animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[3000] flex items-end md:items-center justify-center" onClick={onClose}>
+      <div className="bg-white rounded-t-3xl md:rounded-3xl w-full md:max-w-2xl h-[90%] md:h-auto md:max-h-[85vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
         
-        {/* হেডার */}
-        <div className="flex justify-between items-center mb-6">
-          <button onClick={onClose} className="text-gray-400 font-bold flex items-center gap-1 active:scale-90 transition-transform"><X size={20} /> বন্ধ করুন</button>
-          <div className="text-center">
-            <h2 className="text-xl font-black text-[#f85606] italic">বিজ্ঞাপন দিন</h2>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Sosta Deal Premium</p>
-          </div>
-          <Info size={22} className="text-orange-200" />
-        </div>
-
-        {/* মিডিয়া সেকশন */}
-        <div className="mb-6 space-y-4">
-          <div className="flex gap-3 overflow-x-auto no-scrollbar py-2">
-            {selectedImages.map((img, i) => (
-              <div key={i} className="relative min-w-[90px] h-[90px] rounded-[25px] overflow-hidden border border-gray-100 shadow-sm">
-                <img src={img} className="w-full h-full object-cover" />
-                <button onClick={() => setSelectedImages(prev => prev.filter((_, idx) => idx !== i))} className="absolute top-1 right-1 bg-red-500 p-1.5 rounded-full text-white"><Trash2 size={12} /></button>
-              </div>
-            ))}
-            {selectedImages.length < 6 && (
-              <label className="min-w-[90px] h-[90px] border-2 border-dashed border-orange-200 rounded-[25px] flex flex-col items-center justify-center bg-orange-50/10 cursor-pointer active:scale-95">
-                <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
-                <Camera size={26} className="text-orange-400" />
-                <span className="text-[10px] font-bold text-gray-400 mt-1 uppercase">ছবি দিন</span>
-              </label>
-            )}
-            {!videoPreview && (
-              <label className="min-w-[90px] h-[90px] border-2 border-dashed border-sky-200 rounded-[25px] flex flex-col items-center justify-center bg-sky-50/10 cursor-pointer active:scale-95">
-                <input type="file" accept="video/*" className="hidden" onChange={handleVideoUpload} />
-                <Video size={26} className="text-sky-400" />
-                <span className="text-[10px] font-bold text-sky-400 mt-1 uppercase italic">১০ সেকেন্ড</span>
-              </label>
-            )}
-          </div>
-          {videoPreview && (
-            <div className="relative h-40 rounded-[30px] overflow-hidden border shadow-inner">
-              <video src={videoPreview} className="w-full h-full object-cover" autoPlay muted loop />
-              <button onClick={() => setVideoPreview(null)} className="absolute top-3 right-3 bg-red-500 p-2 rounded-full text-white"><Trash2 size={16} /></button>
-            </div>
-          )}
-          {/* ২. অডিও রেকর্ড বাটন (নতুন যোগ করা হয়েছে) */}
-<button 
-  onMouseDown={startRecording} 
-  onMouseUp={stopRecording}
-  onTouchStart={startRecording} 
-  onTouchEnd={stopRecording}
-  className={`flex-shrink-0 w-24 h-24 border-2 border-dashed rounded-[25px] flex flex-col items-center justify-center transition-all ${isRecording ? 'border-red-500 bg-red-50' : 'border-purple-200 bg-purple-50/30'}`}
->
-  <div className={`p-2 rounded-xl shadow-sm mb-2 ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-white text-purple-600'}`}>
-    {/* Mic আইকন ইমপোর্ট করা না থাকলে lucide-react থেকে Mic ইমপোর্ট করুন */}
-    <Mic size={24} strokeWidth={2.5} />
-  </div>
-  <span className={`text-[10px] font-black ${isRecording ? 'text-red-600' : 'text-purple-600'}`}>
-    {isRecording ? "রেকর্ড হচ্ছে..." : "ভয়েস দিন"}
-  </span >
-</button>
-
-{/* অডিও প্রিভিউ (রেকর্ড শেষ হলে এখানে দেখাবে) */}
-{audioURL && (
-  <div className="mx-4 mt-2 p-3 bg-slate-50 border rounded-2xl flex items-center justify-between animate-in slide-in-from-top-2">
-    <div className="flex items-center gap-2">
-      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-      <span className="text-[10px] font-bold text-slate-500 uppercase">অডিও রেকর্ড হয়েছে</span>
-    </div>
-    <audio src={audioURL} controls className="h-8 w-32 scale-90" />
-    <button onClick={() => setAudioURL(null)} className="text-red-400 p-1">
-      {/* Trash2 আইকন ইমপোর্ট করা না থাকলে lucide-react থেকে Trash2 ইমপোর্ট করুন */}
-      <Trash2 size={16} />
-    </button>
-  </div>
-)}
-        </div>
-
-        {/* ইনপুট ফিল্ডস */}
-        <div className="space-y-4 mb-8">
-          <button onClick={() => setShowCategoryDrawer(true)} className="w-full bg-gray-50 p-5 rounded-[22px] flex justify-between items-center text-sm font-bold text-gray-600 shadow-sm active:bg-orange-50 transition-colors">
-            <span className="flex items-center gap-3"><List size={18} className="text-[#f85606]" /> {selectedCategory}</span>
-            <ChevronDown size={18} />
+        {/* Header */}
+        <div className="sticky top-0 bg-white/95 backdrop-blur-md border-b px-5 py-4 flex justify-between items-center z-10">
+          <button onClick={onClose} className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center active:scale-95 transition">
+            <X size={20} className="text-gray-600" />
           </button>
-          
-          <input type="text" placeholder="পণ্যের নাম *" className="w-full bg-gray-50 p-5 rounded-[22px] text-sm font-bold outline-none shadow-sm focus:bg-white" />
-          
-          <textarea rows={3} placeholder="বিস্তারিত বিবরণ *" className="w-full bg-gray-50 p-5 rounded-[22px] text-sm font-bold outline-none shadow-sm resize-none" />
-
-          <div className="grid grid-cols-2 gap-3">
-            <input type="number" placeholder="দাম (৳) *" className="bg-gray-50 p-5 rounded-[22px] text-sm font-bold outline-none shadow-sm" />
-            <input type="tel" placeholder="মোবাইল নম্বর *" className="bg-gray-50 p-5 rounded-[22px] text-sm font-bold outline-none shadow-sm" />
+          <div className="flex items-center gap-2">
+            <Sparkles size={20} className="text-orange-500" />
+            <h2 className="text-xl font-black bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">বিজ্ঞাপন দিন</h2>
           </div>
-
-          <input 
-            type="text" 
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="লোকেশন হাতে লিখুন *" 
-            className="w-full bg-gray-50 p-5 rounded-[22px] text-sm font-bold outline-none shadow-sm" 
-          />
+          <div className="w-10" />
         </div>
 
-        {/* শর্তাবলী ও নিরাপত্তা বক্স */}
-        <div className="space-y-4 mb-6">
-          <label className="flex items-center justify-center gap-3 cursor-pointer">
-            <input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} className="w-5 h-5 accent-[#f85606] rounded-md" />
-            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tighter italic">আমি সকল নিয়ম ও শর্ত মেনে নিচ্ছি</span>
+        <div className="p-5 space-y-6">
+          
+          {/* Media Upload Section */}
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <p className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <Camera size={16} className="text-orange-500" /> মিডিয়া আপলোড
+              </p>
+              <span className="text-[10px] text-gray-400">{mediaItems.length}/6 ছবি</span>
+            </div>
+            
+            {uploadProgress > 0 && uploadProgress < 100 && (
+              <div className="mb-3">
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1 text-center">আপলোড হচ্ছে... {uploadProgress}%</p>
+              </div>
+            )}
+            
+            <div className="flex gap-3 overflow-x-auto pb-3">
+              {mediaItems.map((item, i) => (
+                <div key={i} className="relative w-24 h-24 rounded-xl overflow-hidden shadow-md group">
+                  <img src={item.url} className="w-full h-full object-cover" />
+                  <button 
+                    onClick={() => setMediaItems(mediaItems.filter((_, idx) => idx !== i))} 
+                    className="absolute top-1 right-1 bg-red-500/90 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition"
+                  >
+                    <Trash2 size={10} className="text-white" />
+                  </button>
+                </div>
+              ))}
+              {mediaItems.length < 6 && (
+                <label className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition group">
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
+                  <Plus size={24} className="text-gray-400 group-hover:text-orange-500" />
+                  <span className="text-[9px] text-gray-400 group-hover:text-orange-500">ছবি যোগ</span>
+                </label>
+              )}
+              {!video && (
+                <label className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition group">
+                  <input type="file" accept="video/*" className="hidden" onChange={handleVideoUpload} />
+                  <FileVideo size={24} className="text-gray-400 group-hover:text-orange-500" />
+                  <span className="text-[9px] text-gray-400 group-hover:text-orange-500">ভিডিও</span>
+                </label>
+              )}
+              <button
+                onMouseDown={startRecording}
+                onMouseUp={stopRecording}
+                onTouchStart={startRecording}
+                onTouchEnd={stopRecording}
+                className={`w-24 h-24 border-2 border-dashed rounded-xl flex flex-col items-center justify-center transition-all ${
+                  isRecording ? 'border-red-500 bg-red-50 shadow-md scale-95' : 'border-gray-300 hover:border-orange-400 hover:bg-orange-50'
+                }`}
+              >
+                <Mic size={24} className={isRecording ? 'text-red-500 animate-pulse' : 'text-gray-400'} />
+                <span className="text-[9px] text-gray-400">{isRecording ? 'রেকর্ডিং...' : 'ভয়েস'}</span>
+                {isRecording && <div className="w-2 h-2 bg-red-500 rounded-full animate-ping mt-1" />}
+              </button>
+            </div>
+            
+            {video && (
+              <div className="relative mt-3 rounded-xl overflow-hidden shadow-md">
+                <video src={video.url} className="w-full h-44 object-cover" controls />
+                <button onClick={() => setVideo(null)} className="absolute top-2 right-2 bg-red-500 p-1.5 rounded-full shadow-md"><Trash2 size={12} className="text-white" /></button>
+              </div>
+            )}
+            {audio && (
+              <div className="mt-3 flex items-center gap-2 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                <Volume2 size={20} className="text-orange-500" />
+                <audio src={audio} controls className="flex-1 h-8" />
+                <button onClick={() => setAudio(null)} className="p-1.5 rounded-full hover:bg-gray-200"><Trash2 size={16} className="text-red-500" /></button>
+              </div>
+            )}
+          </div>
+
+          {/* Product Details */}
+          <div className="space-y-3">
+            <button 
+              onClick={() => setShowCategory(true)} 
+              className="w-full bg-gray-50 p-4 rounded-xl flex justify-between items-center hover:bg-gray-100 transition border border-transparent hover:border-orange-200"
+            >
+              <span className={category ? 'text-gray-800 font-medium' : 'text-gray-400'}>
+                {category || 'ক্যাটাগরি নির্বাচন করুন *'}
+              </span>
+              <ChevronDown size={18} className="text-gray-400" />
+            </button>
+            
+            <div className="relative">
+              <Tag size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="পণ্যের নাম *" 
+                value={title} 
+                onChange={(e) => setTitle(e.target.value)} 
+                className="w-full bg-gray-50 pl-12 pr-4 py-4 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition"
+              />
+            </div>
+            
+            <textarea 
+              placeholder="পণ্যের বিস্তারিত বিবরণ * (ব্র্যান্ড, মডেল, কালার, ওয়ারেন্টি ইত্যাদি)" 
+              rows={4} 
+              value={description} 
+              onChange={(e) => setDescription(e.target.value)} 
+              className="w-full bg-gray-50 p-4 rounded-xl outline-none resize-none focus:ring-2 focus:ring-orange-500 transition"
+            />
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="relative">
+                <DollarSign size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input 
+                  type="number" 
+                  placeholder="দাম (৳) *" 
+                  value={price} 
+                  onChange={(e) => setPrice(e.target.value)} 
+                  className="w-full bg-gray-50 pl-12 pr-4 py-4 rounded-xl outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+              <div className="relative">
+                <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input 
+                  type="tel" 
+                  placeholder="মোবাইল নম্বর *" 
+                  value={phone} 
+                  onChange={(e) => setPhone(e.target.value)} 
+                  className="w-full bg-gray-50 pl-12 pr-4 py-4 rounded-xl outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+            </div>
+            
+            <div className="relative">
+              <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="লোকেশন * (জেলা/থানা)" 
+                value={location} 
+                onChange={(e) => setLocation(e.target.value)} 
+                className="w-full bg-gray-50 pl-12 pr-4 py-4 rounded-xl outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+          </div>
+
+          {/* Additional Info */}
+          <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl p-4 space-y-3">
+            <p className="text-sm font-bold text-gray-800 flex items-center gap-2">
+              <Info size={16} className="text-orange-500" /> অতিরিক্ত তথ্য
+            </p>
+            
+            <select 
+              value={condition} 
+              onChange={(e) => setCondition(e.target.value)} 
+              className="w-full bg-white p-3 rounded-xl outline-none border border-gray-200 focus:border-orange-400"
+            >
+              <option value="">পণ্যের অবস্থা *</option>
+              {conditions.map(cond => <option key={cond} value={cond}>{cond}</option>)}
+            </select>
+            
+            <select 
+              value={deliveryOption} 
+              onChange={(e) => setDeliveryOption(e.target.value)} 
+              className="w-full bg-white p-3 rounded-xl outline-none border border-gray-200 focus:border-orange-400"
+            >
+              <option value="">ডেলিভারি অপশন</option>
+              {deliveryOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+            
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={negotiable} 
+                onChange={() => setNegotiable(!negotiable)} 
+                className="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+              />
+              <span className="text-sm text-gray-600">দাম negotiable</span>
+            </label>
+          </div>
+
+          {/* Terms */}
+          <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition">
+            <input 
+              type="checkbox" 
+              checked={terms} 
+              onChange={() => setTerms(!terms)} 
+              className="w-5 h-5 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+            />
+            <div>
+              <span className="text-sm font-medium">সকল নিয়ম ও শর্ত মেনে নিচ্ছি</span>
+              <p className="text-[10px] text-gray-400">আপনার বিজ্ঞাপন মডারেশন করা হবে</p>
+            </div>
           </label>
 
-          <div className="bg-orange-50 border border-orange-100 p-5 rounded-[30px] flex gap-4 items-start">
-            <AlertTriangle size={20} className="text-orange-500 mt-1" />
-            <div>
-              <h4 className="text-[12px] font-black text-gray-800 uppercase tracking-tighter">নিরাপত্তা সতর্কতা</h4>
-              <p className="text-[10px] font-bold text-gray-500 leading-relaxed italic">লেনদেনের আগে পণ্য যাচাই করুন। SostaDeal-এ অগ্রিম টাকা দেওয়া থেকে বিরত থাকুন।</p>
-            </div>
-          </div>
-        </div>
-
-        {/* পাবলিশ বাটন (সবার নিচে) */}
-        <div className="pb-10">
-          <button 
+          {/* Submit Button */}
+          <button
             onClick={handlePublish}
-            disabled={!termsAccepted || isCompressing}
-            className={`w-full py-5 rounded-[28px] font-black text-lg uppercase tracking-wider flex items-center justify-center gap-3 transition-all ${termsAccepted ? 'bg-[#f85606] text-white shadow-[0_10px_30px_rgba(248,86,6,0.3)] active:scale-95' : 'bg-gray-100 text-gray-300'}`}
+            disabled={!terms || isSubmitting}
+            className={`w-full py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 ${
+              terms && !isSubmitting 
+                ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg hover:shadow-xl active:scale-95' 
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
           >
-            <CheckCircle size={24} /> {isCompressing ? 'ছবি প্রসেসিং হচ্ছে...' : 'বিজ্ঞাপন প্রকাশ করুন'}
+            {isSubmitting ? (
+              <>
+                <Loader2 size={20} className="animate-spin" /> প্রকাশ করা হচ্ছে...
+              </>
+            ) : (
+              <>
+                <CheckCircle size={20} /> বিজ্ঞাপন প্রকাশ করুন
+              </>
+            )}
           </button>
+          
+          <p className="text-center text-[10px] text-gray-400 pb-4">
+            আপনার বিজ্ঞাপন ৩০ দিন পর্যন্ত সক্রিয় থাকবে
+          </p>
         </div>
-
-        {/* সাকসেস পপ-আপ (গ্রীন কালার) */}
-        {showSuccess && (
-          <div className="fixed inset-0 z-[5000] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white rounded-[40px] p-8 w-full max-w-sm text-center shadow-2xl scale-in-center animate-in zoom-in duration-300">
-              <div className="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <CheckCircle size={45} />
-              </div>
-              <h3 className="text-xl font-black text-gray-800 mb-2">অভিনন্দন!</h3>
-              <p className="text-gray-500 font-bold text-sm leading-relaxed mb-6">আপনার বিজ্ঞাপনটি সফলভাবে পাবলিশ হয়েছে। কিছুক্ষণের মধ্যেই এটি লাইভ হবে।</p>
-              <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-green-500 animate-progress"></div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ক্যাটাগরি ড্রয়ার */}
-        {showCategoryDrawer && (
-          <div className="fixed inset-0 bg-black/50 z-[4000] flex items-end" onClick={() => setShowCategoryDrawer(false)}>
-            <div className="w-full bg-white rounded-t-[40px] p-8 h-[60%] animate-in slide-in-from-bottom" onClick={e => e.stopPropagation()}>
-              <div className="w-12 h-1 bg-gray-200 rounded-full mx-auto mb-8" />
-              <div className="space-y-2 overflow-y-auto h-[85%] no-scrollbar">
-                {["মোবাইল", "বাইক", "ল্যান্ড/জমি", "ইলেক্ট্রনিক্স", "ফ্যাশন", "চাকরি", "অন্যান্য"].map(c => (
-                  <button key={c} onClick={() => {setSelectedCategory(c); setShowCategoryDrawer(false);}} className="w-full text-left p-5 bg-gray-50 rounded-2xl font-bold text-gray-700 active:bg-orange-50 transition-colors">{c}</button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
       </div>
-      <style jsx>{`
-        @keyframes progress {
-          0% { width: 0%; }
-          100% { width: 100%; }
-        }
-        .animate-progress {
-          animation: progress 3s linear forwards;
-        }
-      `}</style>
+
+      {/* Category Modal */}
+      {showCategory && (
+        <div className="fixed inset-0 bg-black/50 z-[4000] flex items-end md:items-center justify-center" onClick={() => setShowCategory(false)}>
+          <div className="bg-white rounded-t-3xl md:rounded-3xl w-full md:max-w-md p-6 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg">ক্যাটাগরি নির্বাচন করুন</h3>
+              <button onClick={() => setShowCategory(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"><X size={16} /></button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {categories.map(cat => (
+                <button 
+                  key={cat} 
+                  onClick={() => { setCategory(cat); setShowCategory(false); }} 
+                  className={`p-3 rounded-xl text-left transition-all ${
+                    category === cat ? 'bg-orange-500 text-white' : 'bg-gray-50 hover:bg-gray-100'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
-
-export default PostAdForm;
+}
